@@ -6,11 +6,11 @@ import { useState, useRef, useEffect } from "react";
 import { get, post } from "../../utils/api_helper/api_helper"; // Adjust path if needed
 import { useNavigate } from "react-router-dom";
 import { ChatMessage } from "./types/types"; // Adjust path if needed
-import ChatHistorySidebar, { ChatHistory } from './ChatHistorySidebar';
+import ChatHistorySidebar, { ChatHistory } from "./ChatHistorySidebar";
 import { v4 as uuidv4 } from "uuid";
 
 export default function ChatPage() {
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -29,40 +29,39 @@ export default function ChatPage() {
   async function checkServerConfig() {
     // Keep your existing logic, maybe add better loading/error states later
     try {
-        // Simulate loading check if needed for testing UI
-        // setIsLoading(true);
-        // await new Promise(resolve => setTimeout(resolve, 1000));
-        const serverConfig = await get("/api/server-config");
-        if (!serverConfig?.GEMINI_API_KEY) {
-            setIsLoading(false);
-            navigate("/server-config");
-        }
+      // Simulate loading check if needed for testing UI
+      // setIsLoading(true);
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+      const serverConfig = await get("/api/server-config");
+      if (!serverConfig?.GEMINI_API_KEYS?.length) {
         setIsLoading(false);
+        navigate("/server-config");
+      }
+      setIsLoading(false);
     } catch (e) {
-        setIsLoading(false);
-        console.log(e);
-        // Optionally navigate or show an error message
+      setIsLoading(false);
+      console.log(e);
+      // Optionally navigate or show an error message
     }
   }
   useEffect(() => {
     checkServerConfig();
-     // Add some initial placeholder messages for design preview if desired
-     // setMessages([
-     //   { role: 'user', parts: [{ text: 'Hello Gemini!' }] },
-     //   { role: 'model', parts: [{ text: 'Hi there! How can I help you today?' }] },
-     //   { role: 'user', parts: [{ text: 'Can you explain React Hooks?' }] },
-     //   { role: 'model', parts: [{ text: "Certainly! React Hooks are functions that let you “hook into” React state and lifecycle features from function components..." }] },
-     // ]);
+    // Add some initial placeholder messages for design preview if desired
+    // setMessages([
+    //   { role: 'user', parts: [{ text: 'Hello Gemini!' }] },
+    //   { role: 'model', parts: [{ text: 'Hi there! How can I help you today?' }] },
+    //   { role: 'user', parts: [{ text: 'Can you explain React Hooks?' }] },
+    //   { role: 'model', parts: [{ text: "Certainly! React Hooks are functions that let you “hook into” React state and lifecycle features from function components..." }] },
+    // ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-
 
   // --- Improved scrollToBottom ---
   const scrollToBottom = () => {
     // Scroll the container, not just the dummy div
     if (listContainerRef.current) {
-        listContainerRef.current.scrollTop = listContainerRef.current.scrollHeight;
+      listContainerRef.current.scrollTop =
+        listContainerRef.current.scrollHeight;
     }
     // The dummy div approach is also fine, but scrolling the container is more direct
     // messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,12 +70,10 @@ export default function ChatPage() {
   useEffect(() => {
     // Use timeout to ensure DOM has updated after message state change
     const timer = setTimeout(() => {
-        scrollToBottom();
+      scrollToBottom();
     }, 100); // Small delay
     return () => clearTimeout(timer);
   }, [messages]);
-
-
 
   useEffect(() => {
     const stored = localStorage.getItem("chatHistories");
@@ -91,7 +88,8 @@ export default function ChatPage() {
     const updatedHistories = [...chatHistories];
     const idx = updatedHistories.findIndex((chat) => chat.id === currentChatId);
 
-    const firstUserMessage = messages.find((m) => m.role === "user")?.parts[0]?.text;
+    const firstUserMessage = messages.find((m) => m.role === "user")?.parts[0]
+      ?.text;
     const newTitle = firstUserMessage?.slice(0, 25) || "New Chat";
 
     if (idx >= 0) {
@@ -152,7 +150,7 @@ export default function ChatPage() {
       const data = await post("/api/chat", {
         message: currentInput.trim(), // Use stored input
         history: historyForBackend,
-        model:selectedModel
+        model: selectedModel,
       });
 
       if (data?.reply) {
@@ -170,19 +168,24 @@ export default function ChatPage() {
           },
         ]);
       }
-    } catch (err:any) {
+    } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           role: "system",
-          parts: [{ text: `Error: ${err?.response?.data?.error ||'Failed to fetch response.'}` }],
+          parts: [
+            {
+              text: `Error: ${
+                err?.response?.data?.error || "Failed to fetch response."
+              }`,
+            },
+          ],
         },
       ]);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
     <Box
@@ -202,9 +205,15 @@ export default function ChatPage() {
         loadChat={loadChat}
         startNewChat={startNewChat}
       />
-      <Box 
-      component="main" 
-      sx={{ flexGrow: 1,overflow:"hidden", display: "flex", flexDirection: "column" }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <ChatHeader onMenuClick={toggleDrawer} />
         {/* Message List Area */}
         <Box
@@ -223,30 +232,29 @@ export default function ChatPage() {
             messagesEndRef={messagesEndRef} // Still needed for potential focus/marker
           />
           {/* Invisible div to ensure scroll target is always at the bottom */}
-          <div ref={messagesEndRef} style={{ height: '1px' }} />
-
+          <div ref={messagesEndRef} style={{ height: "1px" }} />
         </Box>
 
         {/* Input Area */}
         <Box
-        sx={{
-          p: { xs: 1, sm: 2 },
-          // borderTop: 1, // Use divider color from theme
-          // borderColor: 'divider',
-          bgcolor: 'background.paper', // Use paper color for input area background
-          boxShadow: '0 -2px 5px rgba(0,0,0,0.05)' // Subtle shadow separating input
-        }}
-      >
-        <MessageInput
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          handleSubmit={sendMessage}
-          isLoading={isLoading}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
-        />         
+          sx={{
+            p: { xs: 1, sm: 2 },
+            // borderTop: 1, // Use divider color from theme
+            // borderColor: 'divider',
+            bgcolor: "background.paper", // Use paper color for input area background
+            boxShadow: "0 -2px 5px rgba(0,0,0,0.05)", // Subtle shadow separating input
+          }}
+        >
+          <MessageInput
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSubmit={sendMessage}
+            isLoading={isLoading}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+          />
         </Box>
       </Box>
     </Box>
   );
-};
+}

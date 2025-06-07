@@ -114,23 +114,23 @@ RESPONSE FORMAT:
 ## 💡 Suggested Commands
 For each command you suggest, format it EXACTLY like this (one command per code block):
 
-```bash
+\`\`\`bash
 # Check available disk space
 df -h
-```
+\`\`\`
 
-```bash
+\`\`\`bash
 # Install a missing package
 sudo apt install package-name
-```
+\`\`\`
 
-```bash
+\`\`\`bash
 # Navigate to home directory
 cd ~
-```
+\`\`\`
 
 CRITICAL: 
-- Use ONLY ```bash (not ```sh or ```shell)
+- Use ONLY \`\`\`bash (not \`\`\`sh or \`\`\`shell)
 - One command per code block
 - Always include a # comment above each command
 - Make comments descriptive and educational

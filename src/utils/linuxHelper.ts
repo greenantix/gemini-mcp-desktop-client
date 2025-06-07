@@ -1,18 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { app } from "electron";
 import { execSync } from "child_process";
 import os from "os";
-
-const isDev = process.env.NODE_ENV === "development";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const configPath = isDev
-  ? "/home/greenantix/AI/gemini-mcp-desktop-client/static/serverConfig.json" // Fixed path for development
-  : path.join(app.getPath("userData"), "serverConfig.json");
 
 // System context gathering functions
 function getSystemContext(preferredDistro?: string) {
@@ -146,17 +135,9 @@ Keep responses concise but educational. Focus on practical next steps.`;
 // Initialize Gemini with vision capabilities for Linux Helper
 export async function initializeLinuxHelperModel() {
   try {
-    const data = fs.readFileSync(configPath, "utf-8");
-    if (!data) {
-      throw new Error("No configuration file found");
-    }
-    
-    const serverConfigurations = JSON.parse(data);
-    const { GEMINI_API_KEY } = serverConfigurations;
-    
-    if (!GEMINI_API_KEY) {
-      throw new Error("No Gemini API key found");
-    }
+    // Use the same API key as the main chat system
+    const GEMINI_API_KEY = "AIzaSyC6oGrn1D62R5urFLAvDgUAhuDQxL-J8xc";
+    console.log(`[Linux Helper] Using direct API key for vision analysis`);
     
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     

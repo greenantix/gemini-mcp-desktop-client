@@ -50,5 +50,13 @@ contextBridge.exposeInMainWorld('api', {
   getSystemContext: () => 
     ipcRenderer.invoke('linux-helper-get-system-context'),
   openScreenshotsFolder: () => 
-    ipcRenderer.invoke('open-screenshots-folder')
+    ipcRenderer.invoke('open-screenshots-folder'),
+  
+  // Settings APIs
+  getSettings: () => 
+    ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings: any) => 
+    ipcRenderer.invoke('save-settings', settings),
+  selectFolder: () => 
+    ipcRenderer.invoke('select-folder')
 });

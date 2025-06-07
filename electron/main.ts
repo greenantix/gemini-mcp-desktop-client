@@ -10,7 +10,6 @@ import {
   desktopCapturer,
   session,
   globalShortcut,
-  nativeImage,
 } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -80,7 +79,7 @@ function ensureScreenshotDirectory(): string {
 // Save screenshot to local file
 async function saveScreenshotLocally(screenshotDataUrl: string): Promise<{filepath: string, filename: string, size: number} | null> {
   try {
-    const screenshotDir = ensureScreenshotDirectory();
+    const screenshotDir = ensureScreenshotDirectoryWithSettings();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `linux-helper-${timestamp}.png`;
     const filepath = path.join(screenshotDir, filename);
@@ -296,13 +295,15 @@ app.whenReady().then(async () => {
     { useSystemPicker: true }
   );
   
-  // Register Linux Helper global shortcuts
-  // Mouse button 5 alternative - using F10 for now (configurable later)
-  const hotkeyRegistered = globalShortcut.register('F10', handleLinuxHelperHotkey);
+  // Load settings and register hotkey
+  loadSettings();
+  
+  // Register Linux Helper global shortcuts using settings
+  const hotkeyRegistered = globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
   if (hotkeyRegistered) {
-    console.log('🚀 Linux Helper hotkey (F10) registered successfully');
+    console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) registered successfully`);
   } else {
-    console.log('❌ Failed to register Linux Helper hotkey (F10)');
+    console.log(`❌ Failed to register Linux Helper hotkey (${currentSettings.hotkey})`);
   }
   
   // ESC key to dismiss/reset state
@@ -329,12 +330,12 @@ ipcMain.handle("get-mic-status", async () => {
 // Open screenshots folder
 ipcMain.handle("open-screenshots-folder", async () => {
   try {
-    const screenshotDir = ensureScreenshotDirectory();
+    const screenshotDir = ensureScreenshotDirectoryWithSettings();
     await shell.openPath(screenshotDir);
     return { success: true };
   } catch (error) {
     console.error("Failed to open screenshots folder:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 
@@ -343,11 +344,14 @@ ipcMain.handle("linux-helper-analyze-screenshot", async (_, screenshotDataUrl: s
   try {
     // Import the Linux Helper module dynamically
     const { analyzeScreenshotWithLinuxHelper } = await import("../src/utils/linuxHelper.ts");
-    const analysis = await analyzeScreenshotWithLinuxHelper(screenshotDataUrl);
+    const analysis = await analyzeScreenshotWithLinuxHelper(screenshotDataUrl, {
+      linuxDistro: currentSettings.linuxDistro,
+      showSystemContext: currentSettings.showSystemContext
+    });
     return { success: true, analysis };
   } catch (error) {
     console.error("Linux Helper analysis failed:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 
@@ -382,7 +386,7 @@ ipcMain.handle("linux-helper-execute-command", async (_, command: string) => {
   } catch (error) {
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       command
     };
   }
@@ -395,7 +399,7 @@ ipcMain.handle("linux-helper-get-system-context", async () => {
     return { success: true, context };
   } catch (error) {
     console.error("Failed to get system context:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 
@@ -404,3 +408,163 @@ ipcMain.on("manual-linux-helper-trigger", () => {
   console.log("📱 Manual Linux Helper trigger received");
   handleLinuxHelperHotkey();
 });
+
+// Settings management
+interface AppSettings {
+  screenshotLocation: string;
+  hotkey: string;
+  theme: 'dark' | 'light';
+  autoSaveScreenshots: boolean;
+  showSystemContext: boolean;
+  linuxDistro: string;
+}
+
+const defaultSettings: AppSettings = {
+  screenshotLocation: '~/Pictures/screenshots',
+  hotkey: 'F10',
+  theme: 'dark',
+  autoSaveScreenshots: true,
+  showSystemContext: true,
+  linuxDistro: 'pop-os',
+};
+
+let currentSettings: AppSettings = { ...defaultSettings };
+
+function getSettingsPath(): string {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+
+function loadSettings(): AppSettings {
+  try {
+    const settingsPath = getSettingsPath();
+    if (fs.existsSync(settingsPath)) {
+      const settingsData = fs.readFileSync(settingsPath, 'utf8');
+      const settings = JSON.parse(settingsData);
+      currentSettings = { ...defaultSettings, ...settings };
+      console.log('⚙️ Settings loaded:', currentSettings);
+    } else {
+      console.log('⚙️ Using default settings');
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    currentSettings = { ...defaultSettings };
+  }
+  return currentSettings;
+}
+
+function saveSettingsToFile(settings: AppSettings): void {
+  try {
+    const settingsPath = getSettingsPath();
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+    console.log('💾 Settings saved:', settings);
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    throw error;
+  }
+}
+
+function updateHotkey(newHotkey: string): boolean {
+  try {
+    // Unregister current hotkey
+    globalShortcut.unregister(currentSettings.hotkey);
+    
+    // Register new hotkey
+    const registered = globalShortcut.register(newHotkey, handleLinuxHelperHotkey);
+    if (registered) {
+      console.log(`🔄 Hotkey updated to: ${newHotkey}`);
+      return true;
+    } else {
+      console.error(`❌ Failed to register new hotkey: ${newHotkey}`);
+      // Re-register old hotkey
+      globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error updating hotkey:', error);
+    return false;
+  }
+}
+
+function getScreenshotDirectory(): string {
+  const location = currentSettings.screenshotLocation;
+  if (location.startsWith('~/')) {
+    return path.join(os.homedir(), location.slice(2));
+  }
+  return location;
+}
+
+// Update the ensureScreenshotDirectory function to use settings
+function ensureScreenshotDirectoryWithSettings(): string {
+  const screenshotDir = getScreenshotDirectory();
+  
+  try {
+    if (!fs.existsSync(screenshotDir)) {
+      fs.mkdirSync(screenshotDir, { recursive: true });
+      console.log(`📁 Created screenshot directory: ${screenshotDir}`);
+    }
+    return screenshotDir;
+  } catch (error) {
+    console.error("Failed to create screenshot directory:", error);
+    // Fallback to default directory
+    return ensureScreenshotDirectory();
+  }
+}
+
+// Settings IPC handlers
+ipcMain.handle("get-settings", async () => {
+  try {
+    return { success: true, settings: currentSettings };
+  } catch (error) {
+    console.error("Failed to get settings:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+ipcMain.handle("save-settings", async (_, newSettings: AppSettings) => {
+  try {
+    const oldHotkey = currentSettings.hotkey;
+    
+    // Update current settings
+    currentSettings = { ...newSettings };
+    
+    // Save to file
+    saveSettingsToFile(currentSettings);
+    
+    // Update hotkey if changed
+    if (oldHotkey !== newSettings.hotkey) {
+      const hotkeyUpdated = updateHotkey(newSettings.hotkey);
+      if (!hotkeyUpdated) {
+        return { 
+          success: false, 
+          error: `Failed to register hotkey: ${newSettings.hotkey}. Settings saved but hotkey not changed.`,
+          partialSuccess: true
+        };
+      }
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+ipcMain.handle("select-folder", async () => {
+  try {
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Select Screenshot Folder',
+      defaultPath: getScreenshotDirectory(),
+      properties: ['openDirectory', 'createDirectory']
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Failed to select folder:", error);
+    return null;
+  }
+});
+

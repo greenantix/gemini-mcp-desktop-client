@@ -15,7 +15,7 @@ const configPath = isDev
   : path.join(app.getPath("userData"), "serverConfig.json");
 
 // System context gathering functions
-function getSystemContext() {
+function getSystemContext(preferredDistro?: string) {
   try {
     const username = os.userInfo().username;
     const hostname = os.hostname();
@@ -42,14 +42,29 @@ function getSystemContext() {
     
     // Get distro info
     let distroInfo = "Linux";
-    try {
-      const osRelease = fs.readFileSync("/etc/os-release", "utf-8");
-      const prettyName = osRelease.match(/PRETTY_NAME="([^"]+)"/);
-      if (prettyName) {
-        distroInfo = prettyName[1];
+    if (preferredDistro) {
+      // Use preferred distro from settings
+      const distroMap = {
+        'pop-os': 'Pop!_OS',
+        'ubuntu': 'Ubuntu',
+        'debian': 'Debian',
+        'fedora': 'Fedora',
+        'arch': 'Arch Linux',
+        'mint': 'Linux Mint',
+        'generic': 'Linux'
+      };
+      distroInfo = distroMap[preferredDistro as keyof typeof distroMap] || 'Linux';
+    } else {
+      // Auto-detect from system
+      try {
+        const osRelease = fs.readFileSync("/etc/os-release", "utf-8");
+        const prettyName = osRelease.match(/PRETTY_NAME="([^"]+)"/);
+        if (prettyName) {
+          distroInfo = prettyName[1];
+        }
+      } catch (e) {
+        // Fallback
       }
-    } catch (e) {
-      // Fallback
     }
     
     return {
@@ -135,10 +150,16 @@ export async function initializeLinuxHelperModel() {
 }
 
 // Analyze screenshot with Linux Helper context
-export async function analyzeScreenshotWithLinuxHelper(screenshotDataUrl: string): Promise<string> {
+export async function analyzeScreenshotWithLinuxHelper(
+  screenshotDataUrl: string,
+  settings?: {
+    linuxDistro?: string;
+    showSystemContext?: boolean;
+  }
+): Promise<string> {
   try {
     const model = await initializeLinuxHelperModel();
-    const systemContext = getSystemContext();
+    const systemContext = getSystemContext(settings?.linuxDistro);
     
     if (!systemContext) {
       throw new Error("Failed to gather system context");

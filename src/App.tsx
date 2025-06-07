@@ -1,19 +1,22 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import ChatPage from './screens/Chat/ChatPage';
-import SettingsPage from './screens/McpSettingsPage/McpSettingsPage';
+import SettingsPage from './screens/Settings/SettingsPage';
+import McpSettingsPage from './screens/McpSettingsPage/McpSettingsPage';
 import ServerConfiguration from './screens/ServerConfiguration/ServerConfiguration';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
+import { AppThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export default function App() {
+function AppContent() {
+  const { theme, themeMode } = useTheme();
+
   return (
     <ThemeProvider theme={theme}>
-     <CssBaseline />
-     <ToastContainer
-        position="top-right" // Where the toasts appear
-        autoClose={5000} // Auto close after 5 seconds
+      <CssBaseline />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -21,15 +24,24 @@ export default function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light" // 'light', 'dark', or 'colored'
+        theme={themeMode === 'dark' ? 'dark' : 'light'}
       />
-    <Router>
-      <Routes>
-        <Route path="/" element={<ChatPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/server-config" element={<ServerConfiguration />} />
-      </Routes>
-    </Router>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ChatPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/mcp-settings" element={<McpSettingsPage />} />
+          <Route path="/server-config" element={<ServerConfiguration />} />
+        </Routes>
+      </Router>
     </ThemeProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AppThemeProvider>
+      <AppContent />
+    </AppThemeProvider>
   );
 }

@@ -283,12 +283,18 @@ export const chatWithLLM = async (req: Request, res: Response) => {
     ? modelNameField[0]
     : modelNameField;
 
-  if (!currentMessage) {
-    return res.status(400).json({ error: "Message is required" });
+  // Allow file-only submissions or require a message
+  if (!currentMessage && !contentFile) {
+    return res.status(400).json({ error: "Message or file is required" });
   }
   if (!currentModelName) {
     return res.status(400).json({ error: "Model name ('model') is required" });
   }
+  // Handle file-only uploads
+  if (!currentMessage && contentFile) {
+    currentMessage = `Please analyze this ${contentFile.mimetype?.split('/')[0] || 'file'}: ${contentFile.originalFilename || 'uploaded file'}`;
+  }
+  
   if (contentReadFromFile) {
     currentMessage =
       currentMessage + `\nCONTEXT OF FILE\n ${contentReadFromFile}`;
@@ -322,8 +328,16 @@ export const chatWithLLM = async (req: Request, res: Response) => {
       });
     }
 
+    // Ensure history starts with user message for Gemini API
+    let cleanHistory = history;
+    if (history.length > 0 && history[0].role !== "user") {
+      // Find first user message and start history from there
+      const firstUserIndex = history.findIndex(msg => msg.role === "user");
+      cleanHistory = firstUserIndex >= 0 ? history.slice(firstUserIndex) : [];
+    }
+
     const chat = geminiModel.startChat({
-      history: history,
+      history: cleanHistory,
       tools:
         allGeminiTools.length > 0
           ? [{ functionDeclarations: allGeminiTools }]

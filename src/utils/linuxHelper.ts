@@ -82,14 +82,15 @@ ${systemContext.git ? `- Git User: ${systemContext.git.user} (${systemContext.gi
 ANALYZE THIS SCREENSHOT and provide helpful suggestions:
 
 GUIDELINES:
-1. If you see ERROR MESSAGES or RED TEXT, provide the exact fix command
-2. Use ACTUAL usernames/paths from the context above (never use placeholders like {username})
-3. If in a git repo, use the real GitHub username for suggestions
-4. Explain what commands do (user is learning Linux)
-5. Be specific - use real file paths, not placeholders
-6. If nothing urgent, suggest 2-3 helpful next steps
-7. For file operations, use full paths starting with /home/${systemContext.username}/
-8. Prioritize safety - warn about dangerous commands
+1. FIRST AND MOST IMPORTANT: Describe what you actually SEE in the screenshot
+2. If you see ERROR MESSAGES or RED TEXT, provide the exact fix command
+3. If you see specific text, code, or UI elements, mention them specifically
+4. Only suggest git/GitHub commands if you actually see git-related content in the screenshot
+5. Use ACTUAL usernames/paths from the context above (never use placeholders like {username})
+6. Explain what commands do (user is learning Linux)
+7. Be specific - use real file paths, not placeholders
+8. If nothing urgent visible, suggest 2-3 helpful next steps based on what's shown
+9. Prioritize safety - warn about dangerous commands
 
 RESPONSE FORMAT:
 ## 🔍 What I See

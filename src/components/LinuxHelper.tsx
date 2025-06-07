@@ -39,9 +39,28 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
             const extractedCommands = extractCommandsFromMarkdown(result.analysis);
             setLastCommands(extractedCommands);
             
+            // Debug: Log extracted commands
+            console.log('🐧 Extracted commands:', extractedCommands);
+            
+            // Create enhanced message with commands summary
+            let chatMessage = `🖼️ **Linux Helper Screenshot Analysis**\n\n${result.analysis}`;
+            
+            if (extractedCommands.length > 0) {
+              chatMessage += `\n\n🎯 **Commands Detected**: ${extractedCommands.length} command(s) ready`;
+              chatMessage += `\n💡 **Press F10 again** to copy the first command to clipboard`;
+              
+              // Show all detected commands for debugging
+              chatMessage += `\n\n📝 **Commands found**:`;
+              extractedCommands.forEach((cmd, i) => {
+                const command = cmd.command || cmd;
+                const comment = cmd.comment || 'Run command';
+                chatMessage += `\n${i + 1}. \`${command}\` - ${comment}`;
+              });
+            }
+            
             // Send to chat with actual screenshot metadata
             onSendToChat(
-              `🖼️ **Linux Helper Screenshot Analysis**\n\n${result.analysis}`,
+              chatMessage,
               data.screenshot,
               { 
                 filename: data.filename || 'screenshot.png', 
@@ -49,7 +68,7 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
               }
             );
             
-            setHelperState('ready-to-execute');
+            setHelperState(extractedCommands.length > 0 ? 'ready-to-execute' : 'idle');
           } else {
             onSendToChat(`❌ **Linux Helper Error**: ${result.error || "Failed to analyze"}`);
           }
@@ -61,16 +80,23 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
 
     const handleExecute = async () => {
       if (lastCommands.length > 0 && helperState === 'ready-to-execute') {
-        // Get the first safe command
-        const commandToPaste = lastCommands[0];
+        // Get the first command
+        const firstCommand = lastCommands[0];
+        const commandToPaste = firstCommand.command || firstCommand;
+        const commandComment = firstCommand.comment || 'Run command';
         
         try {
           // Copy command to clipboard for user to paste
           const result = await (window as any).api.pasteAtCursor(commandToPaste);
           
           if (result.success) {
-            // Send confirmation to chat
-            onSendToChat(`📋 **Command copied to clipboard**: \`${commandToPaste}\`\n\n💡 **Press Ctrl+V** to paste at your cursor location`);
+            // Send confirmation to chat with comment
+            onSendToChat(
+              `📋 **Command copied to clipboard**:\n` +
+              `\`${commandToPaste}\`\n\n` +
+              `💬 **Purpose**: ${commandComment}\n` +
+              `💡 **Press Ctrl+V** to paste at your cursor location`
+            );
           } else {
             onSendToChat(`❌ **Failed to copy command**: ${result.error}`);
           }
@@ -99,19 +125,49 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
     };
   }, [onSendToChat]);
 
-  const extractCommandsFromMarkdown = (markdown: string): string[] => {
-    const commands: string[] = [];
+  const extractCommandsFromMarkdown = (markdown: string): Array<{command: string, comment: string}> => {
+    const commands: Array<{command: string, comment: string}> = [];
     
-    // Extract from code blocks
-    const codeBlockRegex = /```(?:bash|shell|sh)?\n(.*?)\n```/gs;
+    // Extract from bash code blocks with comments
+    const codeBlockRegex = /```bash\n(.*?)\n```/gs;
     let match;
     
     while ((match = codeBlockRegex.exec(markdown)) !== null) {
-      const commandBlock = match[1].trim();
-      const blockCommands = commandBlock.split('\n').filter(cmd => 
-        cmd.trim() && !cmd.trim().startsWith('#')
-      );
-      commands.push(...blockCommands);
+      const blockContent = match[1].trim();
+      const lines = blockContent.split('\n');
+      
+      let currentComment = '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('#')) {
+          // This is a comment
+          currentComment = trimmed.substring(1).trim();
+        } else if (trimmed && !trimmed.startsWith('#')) {
+          // This is a command
+          commands.push({
+            command: trimmed,
+            comment: currentComment || 'Run command'
+          });
+          currentComment = ''; // Reset comment for next command
+        }
+      }
+    }
+    
+    // Fallback: Extract any commands from other code blocks
+    if (commands.length === 0) {
+      const fallbackRegex = /```(?:bash|shell|sh)?\n(.*?)\n```/gs;
+      while ((match = fallbackRegex.exec(markdown)) !== null) {
+        const commandBlock = match[1].trim();
+        const blockCommands = commandBlock.split('\n').filter(cmd => 
+          cmd.trim() && !cmd.trim().startsWith('#')
+        );
+        blockCommands.forEach(cmd => {
+          commands.push({
+            command: cmd.trim(),
+            comment: 'Run command'
+          });
+        });
+      }
     }
     
     // Extract inline commands (lines starting with $)
@@ -119,11 +175,14 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
     for (const line of lines) {
       const trimmed = line.trim();
       if (trimmed.startsWith('$ ')) {
-        commands.push(trimmed.substring(2));
+        commands.push({
+          command: trimmed.substring(2),
+          comment: 'Run command'
+        });
       }
     }
     
-    return [...new Set(commands)]; // Remove duplicates
+    return commands;
   };
 
   // No UI - this component runs in background only

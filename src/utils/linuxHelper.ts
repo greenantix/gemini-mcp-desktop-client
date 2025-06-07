@@ -111,11 +111,34 @@ RESPONSE FORMAT:
 ## 🔍 What I See
 [Brief description of what's in the screenshot]
 
-## 💡 Suggestions
-[Numbered list of specific actions with commands]
+## 💡 Suggested Commands
+For each command you suggest, format it EXACTLY like this (one command per code block):
+
+```bash
+# Check available disk space
+df -h
+```
+
+```bash
+# Install a missing package
+sudo apt install package-name
+```
+
+```bash
+# Navigate to home directory
+cd ~
+```
+
+CRITICAL: 
+- Use ONLY ```bash (not ```sh or ```shell)
+- One command per code block
+- Always include a # comment above each command
+- Make comments descriptive and educational
 
 ## 📚 Explanation
-[Educational notes about what the commands do]
+[Educational notes about the commands and concepts]
+
+IMPORTANT: Always wrap commands in \`\`\`bash code blocks with descriptive comments. One command per block.
 
 Keep responses concise but educational. Focus on practical next steps.`;
 }

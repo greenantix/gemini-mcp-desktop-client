@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const configPath = isDev
-  ? path.join(__dirname, "../backend/configurations/serverConfig.json")
+  ? "/home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/serverConfig.json" // Hardcoded for development
   : path.join(app.getPath("userData"), "serverConfig.json");
 
 // System context gathering functions

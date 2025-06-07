@@ -16,6 +16,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { useState, MouseEvent } from 'react'; // Import MouseEvent
 
 interface ChatHeaderProps {
@@ -56,6 +57,19 @@ export default function ChatHeader({
   const handleModelSelect = (model: string) => {
     setSelectedModel(model);
     setAnchorEl(null); // Close the menu after selection
+  };
+
+  // Linux Helper trigger function
+  const handleLinuxHelperClick = async () => {
+    try {
+      console.log('🐧 Linux Helper button clicked');
+      // For now, just simulate the hotkey press
+      if ((window as any).ipcRenderer) {
+        (window as any).ipcRenderer.send('manual-linux-helper-trigger');
+      }
+    } catch (error) {
+      console.error('Failed to trigger Linux Helper:', error);
+    }
   };
 
   return (
@@ -154,6 +168,16 @@ export default function ChatHeader({
               </MenuItem>
             ))}
           </Menu>
+
+          <Tooltip title="Linux Helper (F10)">
+            <IconButton 
+              color="inherit" 
+              onClick={handleLinuxHelperClick}
+              sx={{ mr: 1 }}
+            >
+              <CameraAltIcon />
+            </IconButton>
+          </Tooltip>
 
           <Tooltip title="Settings">
             <IconButton color="inherit" onClick={() => navigate('/settings')}>

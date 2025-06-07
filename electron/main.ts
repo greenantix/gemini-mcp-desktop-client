@@ -235,12 +235,12 @@ app.whenReady().then(async () => {
   );
   
   // Register Linux Helper global shortcuts
-  // Mouse button 5 alternative - using F12 for now (configurable later)
-  const hotkeyRegistered = globalShortcut.register('F12', handleLinuxHelperHotkey);
+  // Mouse button 5 alternative - using F10 for now (configurable later)
+  const hotkeyRegistered = globalShortcut.register('F10', handleLinuxHelperHotkey);
   if (hotkeyRegistered) {
-    console.log('🚀 Linux Helper hotkey (F12) registered successfully');
+    console.log('🚀 Linux Helper hotkey (F10) registered successfully');
   } else {
-    console.log('❌ Failed to register Linux Helper hotkey');
+    console.log('❌ Failed to register Linux Helper hotkey (F10)');
   }
   
   // ESC key to dismiss/reset state
@@ -323,4 +323,10 @@ ipcMain.handle("linux-helper-get-system-context", async () => {
     console.error("Failed to get system context:", error);
     return { success: false, error: error.message };
   }
+});
+
+// Handle manual Linux Helper trigger from UI button
+ipcMain.on("manual-linux-helper-trigger", () => {
+  console.log("📱 Manual Linux Helper trigger received");
+  handleLinuxHelperHotkey();
 });

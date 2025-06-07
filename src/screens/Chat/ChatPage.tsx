@@ -60,20 +60,19 @@ export default function ChatPage() {
   const handleLinuxHelperMessage = (message: string, screenshot?: string) => {
     const newMessage: ChatMessage = {
       id: uuidv4(),
-      text: message,
-      isUser: false,
-      timestamp: new Date(),
-      model: "linux-helper",
+      role: "model",
+      parts: [{ text: message }],
+      timestamp: new Date().toISOString(),
       files: screenshot ? [{
         name: "screenshot.png",
         type: "image/png",
+        size: 0,
         url: screenshot,
         content: screenshot
       }] : undefined
     };
 
     setMessages(prev => [...prev, newMessage]);
-    saveCurrentChat();
     scrollToBottom();
   };
 

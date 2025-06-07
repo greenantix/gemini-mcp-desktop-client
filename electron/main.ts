@@ -568,3 +568,31 @@ ipcMain.handle("select-folder", async () => {
   }
 });
 
+ipcMain.handle("paste-at-cursor", async (_, command: string) => {
+  try {
+    const { clipboard } = await import('electron');
+    
+    // Save current clipboard content
+    const previousClipboard = clipboard.readText();
+    
+    // Set command to clipboard
+    clipboard.writeText(command);
+    
+    // Send notification that command is ready to paste
+    win.webContents.send('command-ready-to-paste', command);
+    
+    console.log(`📋 Command copied to clipboard: ${command}`);
+    console.log(`💡 User should now press Ctrl+V to paste where needed`);
+    
+    // Restore previous clipboard after 5 seconds
+    setTimeout(() => {
+      clipboard.writeText(previousClipboard);
+    }, 5000);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to copy command to clipboard:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+

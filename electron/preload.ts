@@ -58,5 +58,9 @@ contextBridge.exposeInMainWorld('api', {
   saveSettings: (settings: any) => 
     ipcRenderer.invoke('save-settings', settings),
   selectFolder: () => 
-    ipcRenderer.invoke('select-folder')
+    ipcRenderer.invoke('select-folder'),
+  
+  // Command pasting API
+  pasteAtCursor: (command: string) => 
+    ipcRenderer.invoke('paste-at-cursor', command)
 });

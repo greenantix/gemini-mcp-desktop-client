@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const isDev = process.env.NODE_ENV === "development";
 const configPath = isDev
-  ? path.join(__dirname, "../src/backend/configurations/serverConfig.json")
+  ? path.join(__dirname, "../../../backend/configurations/serverConfig.json")
   : path.join(app.getPath("userData"), "serverConfig.json");
 
 export const getServerConfiguration = (_: any, res: any) => {

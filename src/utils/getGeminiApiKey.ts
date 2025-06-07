@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const configPath = isDev
-  ? path.join(__dirname, "../src/backend/configurations/serverConfig.json") // for development
+  ? path.join(__dirname, "../backend/configurations/serverConfig.json") // for development
   : path.join(app.getPath("userData"), "serverConfig.json");
 
 export function getGeminiApiKey(): string | null {

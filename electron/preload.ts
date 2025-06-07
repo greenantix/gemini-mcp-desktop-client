@@ -25,4 +25,28 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 contextBridge.exposeInMainWorld('api', {
   getInfo: () => ipcRenderer.invoke('get-info'),
   getMicStatus: () => ipcRenderer.invoke('get-mic-status'),
+  
+  // Linux Helper APIs
+  onLinuxHelperScreenshot: (callback: (data: any) => void) => {
+    ipcRenderer.on('linux-helper-screenshot', (_, data) => callback(data));
+  },
+  onLinuxHelperExecute: (callback: (data: any) => void) => {
+    ipcRenderer.on('linux-helper-execute', (_, data) => callback(data));
+  },
+  onLinuxHelperDismissed: (callback: () => void) => {
+    ipcRenderer.on('linux-helper-dismissed', () => callback());
+  },
+  removeLinuxHelperListeners: () => {
+    ipcRenderer.removeAllListeners('linux-helper-screenshot');
+    ipcRenderer.removeAllListeners('linux-helper-execute');
+    ipcRenderer.removeAllListeners('linux-helper-dismissed');
+  },
+  
+  // Linux Helper IPC methods
+  analyzeScreenshot: (screenshotDataUrl: string) => 
+    ipcRenderer.invoke('linux-helper-analyze-screenshot', screenshotDataUrl),
+  executeCommand: (command: string) => 
+    ipcRenderer.invoke('linux-helper-execute-command', command),
+  getSystemContext: () => 
+    ipcRenderer.invoke('linux-helper-get-system-context')
 });

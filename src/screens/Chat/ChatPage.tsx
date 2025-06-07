@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { ChatMessage, FileAttachment, ChatHistory } from "./types/types";
 import ChatHistorySidebar from "./ChatHistorySidebar";
 import { v4 as uuidv4 } from "uuid";
+import LinuxHelper from "../../components/LinuxHelper";
 
 
 export default function ChatPage() {
@@ -53,6 +54,27 @@ export default function ChatPage() {
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = listContainerRef.current.scrollHeight;
     }
+  };
+
+  // Handle messages from Linux Helper
+  const handleLinuxHelperMessage = (message: string, screenshot?: string) => {
+    const newMessage: ChatMessage = {
+      id: uuidv4(),
+      text: message,
+      isUser: false,
+      timestamp: new Date(),
+      model: "linux-helper",
+      files: screenshot ? [{
+        name: "screenshot.png",
+        type: "image/png",
+        url: screenshot,
+        content: screenshot
+      }] : undefined
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    saveCurrentChat();
+    scrollToBottom();
   };
 
   useEffect(() => {
@@ -349,6 +371,9 @@ export default function ChatPage() {
           />
         </Box>
       </Box>
+      
+      {/* Linux Helper Component */}
+      <LinuxHelper onSendToChat={handleLinuxHelperMessage} />
     </Box>
   );
 }

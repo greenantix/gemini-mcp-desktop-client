@@ -9,6 +9,8 @@ import {
   dialog,
   desktopCapturer,
   session,
+  globalShortcut,
+  nativeImage,
 } from "electron";
 // import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -41,6 +43,77 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow;
+
+// Linux Helper Tool State
+interface LinuxHelperState {
+  isWaitingForSecondHotkey: boolean;
+  lastScreenshot: string | null;
+  lastSuggestions: string | null;
+}
+
+const helperState: LinuxHelperState = {
+  isWaitingForSecondHotkey: false,
+  lastScreenshot: null,
+  lastSuggestions: null,
+};
+
+// Screenshot capture function
+async function captureActiveMonitorScreenshot(): Promise<string | null> {
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ["screen"],
+      thumbnailSize: { width: 1920, height: 1080 }
+    });
+    
+    if (sources.length > 0) {
+      // Get the primary display screenshot
+      const screenshot = sources[0].thumbnail;
+      return screenshot.toDataURL();
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to capture screenshot:", error);
+    return null;
+  }
+}
+
+// Linux Helper hotkey handler
+async function handleLinuxHelperHotkey() {
+  if (!helperState.isWaitingForSecondHotkey) {
+    // First hotkey press - capture and analyze
+    console.log("🔥 Linux Helper activated - capturing screenshot...");
+    
+    const screenshot = await captureActiveMonitorScreenshot();
+    if (screenshot) {
+      helperState.lastScreenshot = screenshot;
+      
+      // Send screenshot to chat for analysis
+      win.webContents.send("linux-helper-screenshot", {
+        screenshot,
+        action: "analyze"
+      });
+      
+      helperState.isWaitingForSecondHotkey = true;
+      
+      // Auto-reset after 30 seconds if no second hotkey
+      setTimeout(() => {
+        if (helperState.isWaitingForSecondHotkey) {
+          helperState.isWaitingForSecondHotkey = false;
+          console.log("🕐 Linux Helper timeout - resetting state");
+        }
+      }, 30000);
+    }
+  } else {
+    // Second hotkey press - execute suggestions
+    console.log("⚡ Linux Helper executing suggestions...");
+    
+    win.webContents.send("linux-helper-execute", {
+      action: "execute"
+    });
+    
+    helperState.isWaitingForSecondHotkey = false;
+  }
+}
 
 async function checkAndRequestMicrophonePermission(): Promise<boolean> {
   if (process.platform !== "darwin") {
@@ -131,9 +204,16 @@ function createWindow() {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
+    // Unregister all global shortcuts before quitting
+    globalShortcut.unregisterAll();
     app.quit();
     // win = null;
   }
+});
+
+app.on("will-quit", () => {
+  // Unregister all global shortcuts
+  globalShortcut.unregisterAll();
 });
 
 app.on("activate", () => {
@@ -153,6 +233,25 @@ app.whenReady().then(async () => {
     },
     { useSystemPicker: true }
   );
+  
+  // Register Linux Helper global shortcuts
+  // Mouse button 5 alternative - using F12 for now (configurable later)
+  const hotkeyRegistered = globalShortcut.register('F12', handleLinuxHelperHotkey);
+  if (hotkeyRegistered) {
+    console.log('🚀 Linux Helper hotkey (F12) registered successfully');
+  } else {
+    console.log('❌ Failed to register Linux Helper hotkey');
+  }
+  
+  // ESC key to dismiss/reset state
+  globalShortcut.register('Escape', () => {
+    if (helperState.isWaitingForSecondHotkey) {
+      helperState.isWaitingForSecondHotkey = false;
+      console.log('🚫 Linux Helper dismissed');
+      win.webContents.send("linux-helper-dismissed");
+    }
+  });
+  
   await checkAndRequestMicrophonePermission();
   startServer();
   createWindow();
@@ -163,4 +262,65 @@ ipcMain.handle("get-info", async () => {
 ipcMain.handle("get-mic-status", async () => {
   const status = await checkAndRequestMicrophonePermission();
   return status;
+});
+
+// Linux Helper IPC handlers
+ipcMain.handle("linux-helper-analyze-screenshot", async (_, screenshotDataUrl: string) => {
+  try {
+    // Import the Linux Helper module dynamically
+    const { analyzeScreenshotWithLinuxHelper } = await import("../src/utils/linuxHelper.ts");
+    const analysis = await analyzeScreenshotWithLinuxHelper(screenshotDataUrl);
+    return { success: true, analysis };
+  } catch (error) {
+    console.error("Linux Helper analysis failed:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("linux-helper-execute-command", async (_, command: string) => {
+  try {
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
+    const execAsync = promisify(exec);
+    
+    // Import safety checker
+    const { isDangerousCommand } = await import("../src/utils/linuxHelper.ts");
+    
+    if (isDangerousCommand(command)) {
+      return {
+        success: false,
+        error: "Command rejected for safety reasons",
+        requiresConfirmation: true,
+        command
+      };
+    }
+    
+    const result = await execAsync(command, { 
+      timeout: 30000,  // 30 second timeout
+      maxBuffer: 1024 * 1024 // 1MB max output
+    });
+    
+    return {
+      success: true,
+      stdout: result.stdout,
+      stderr: result.stderr
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      command
+    };
+  }
+});
+
+ipcMain.handle("linux-helper-get-system-context", async () => {
+  try {
+    const { getSystemContext } = await import("../src/utils/linuxHelper.ts");
+    const context = getSystemContext();
+    return { success: true, context };
+  } catch (error) {
+    console.error("Failed to get system context:", error);
+    return { success: false, error: error.message };
+  }
 });

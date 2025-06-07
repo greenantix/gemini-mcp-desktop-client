@@ -17,7 +17,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
 interface LinuxHelperProps {
-  onSendToChat: (message: string, screenshot?: string) => void;
+  onSendToChat: (message: string, screenshot?: string, screenshotMeta?: {filename: string, size: number}) => void;
 }
 
 interface CommandResult {
@@ -47,7 +47,7 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
 
   useEffect(() => {
     // Setup Linux Helper event listeners
-    const handleScreenshot = async (data: { screenshot: string; action: string }) => {
+    const handleScreenshot = async (data: { screenshot: string; action: string; filename?: string; size?: number; filepath?: string }) => {
       if (data.action === 'analyze') {
         setCurrentScreenshot(data.screenshot);
         setIsVisible(true);
@@ -65,10 +65,14 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
             const extractedCommands = extractCommandsFromMarkdown(result.analysis);
             setCommands(extractedCommands);
             
-            // Send to chat as well
+            // Send to chat with actual screenshot metadata
             onSendToChat(
               `🖼️ **Linux Helper Screenshot Analysis**\n\n${result.analysis}`,
-              data.screenshot
+              data.screenshot,
+              { 
+                filename: data.filename || 'screenshot.png', 
+                size: data.size || 0 
+              }
             );
             
             setHelperState('ready-to-execute');

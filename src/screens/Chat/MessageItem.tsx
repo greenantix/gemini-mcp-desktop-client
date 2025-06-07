@@ -14,6 +14,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import AssessmentIcon from '@mui/icons-material/Assessment'; // for CSV, Excel
+import FolderIcon from '@mui/icons-material/Folder';
 import { alpha } from '@mui/material/styles';
 
 
@@ -69,7 +70,12 @@ const markdownComponents = {
 };
 
 
-const getFileIcon = (fileType: string): JSX.Element => {
+const getFileIcon = (fileName: string, fileType: string): JSX.Element => {
+  // Special case for Linux Helper screenshots - show folder icon to indicate it opens folder
+  if (fileName.startsWith('linux-helper-') && fileType.startsWith('image/')) {
+    return <FolderIcon fontSize="small" />;
+  }
+  
   if (fileType.startsWith('image/')) return <ImageIcon fontSize="small" />;
   if (fileType.startsWith('audio/')) return <AudiotrackIcon fontSize="small" />;
   if (fileType.startsWith('video/')) return <VideocamIcon fontSize="small" />;
@@ -85,6 +91,18 @@ const MessageItem = ({ message }: Props) => {
   const isUser = message.role === 'user';
   const isModel = message.role === 'model';
   const isSystem = message.role === 'system';
+
+  // Handle file click - open screenshots folder for Linux Helper screenshots
+  const handleFileClick = async (fileName: string, fileType: string) => {
+    if (fileName.startsWith('linux-helper-') && fileType.startsWith('image/')) {
+      try {
+        await (window as any).api.openScreenshotsFolder();
+        console.log('📁 Opened screenshots folder');
+      } catch (error) {
+        console.error('Failed to open screenshots folder:', error);
+      }
+    }
+  };
 
   const justify = isUser ? 'flex-end' : 'flex-start';
 
@@ -161,20 +179,26 @@ const MessageItem = ({ message }: Props) => {
               {message.files!.map((file: FileAttachment) => (
                 <Chip
                   key={file.name}
-                  icon={getFileIcon(file.type)}
+                  icon={getFileIcon(file.name, file.type)}
                   label={
                     <Typography variant="caption" sx={{ display: 'block', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                      {file.name} ({ (file.size / 1024 / 1024).toFixed(2)} MB)
+                      📁 {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
                     </Typography>
                   }
                   size="small"
                   variant="outlined"
+                  clickable={file.name.startsWith('linux-helper-') && file.type.startsWith('image/')}
                   sx={{
                     backgroundColor: alpha(textColor === theme.palette.common.white ? theme.palette.common.black : theme.palette.common.white, 0.12),
                     borderColor: alpha(textColor === theme.palette.common.white ? theme.palette.common.black : theme.palette.common.white, 0.25),
                     color: textColor,
                     maxWidth: '100%', // Ensure chip fits
                     height: 'auto', // Allow chip to grow for multiline label if needed (though current label is single line)
+                    cursor: file.name.startsWith('linux-helper-') && file.type.startsWith('image/') ? 'pointer' : 'default',
+                    '&:hover': file.name.startsWith('linux-helper-') && file.type.startsWith('image/') ? {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                      borderColor: theme.palette.primary.main,
+                    } : {},
                     '& .MuiChip-icon': {
                         color: textColor,
                         ml: '6px',
@@ -184,7 +208,7 @@ const MessageItem = ({ message }: Props) => {
                       paddingRight: '8px',
                     }
                   }}
-                  // onClick={() => { /* TODO: Handle file click for download/preview */ }}
+                  onClick={() => handleFileClick(file.name, file.type)}
                 />
               ))}
             </Stack>

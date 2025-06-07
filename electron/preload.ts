@@ -48,5 +48,7 @@ contextBridge.exposeInMainWorld('api', {
   executeCommand: (command: string) => 
     ipcRenderer.invoke('linux-helper-execute-command', command),
   getSystemContext: () => 
-    ipcRenderer.invoke('linux-helper-get-system-context')
+    ipcRenderer.invoke('linux-helper-get-system-context'),
+  openScreenshotsFolder: () => 
+    ipcRenderer.invoke('open-screenshots-folder')
 });

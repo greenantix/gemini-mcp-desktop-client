@@ -1,17 +1,17 @@
 # Linux Helper Development Plan
 
-## Current Status (WORKING STATE)
+## Current Status (WORKING STATE - UPDATED)
 **Date:** June 7, 2025  
-**Last Known Good Commit:** About to commit  
-**Status:** Core functionality working, ready for enhancements
+**Last Known Good Commit:** 62cb94f - All core features working + QoL improvements  
+**Status:** Core functionality working, dark theme applied, ready for command execution
 
 ### ✅ What's Currently Working
 1. **Basic Chat Functionality**
-   - Gemini API integration with direct API key
-   - MCP server connections (filesystem tools)
-   - File upload and analysis (images, videos, documents)
-   - Chat history management
-   - Error handling and logging
+   - Gemini API integration with direct API key ✅
+   - MCP server connections (filesystem tools) ✅
+   - File upload and analysis (images, videos, documents) ✅
+   - Chat history management ✅
+   - Error handling and logging ✅
 
 2. **Linux Helper Core Features**
    - F10 hotkey screenshot capture ✅
@@ -19,10 +19,18 @@
    - System context gathering (user, git, distro) ✅
    - Smart suggestions based on visible content ✅
    - Integration with chat interface ✅
+   - Screenshots saved to ~/Pictures/screenshots/ ✅
+   - Clickable filename opens screenshots folder ✅
 
-3. **File Processing**
+3. **UI/UX Improvements**
+   - Pop!_OS dark theme (orange/teal accents) ✅
+   - Fixed MCP drag-drop white-on-white text ✅
+   - App rebranding "Linux Helper - Pop!_OS Assistant" ✅
+   - Proper screenshot metadata display ✅
+
+4. **File Processing**
    - Video analysis (.webm, etc.) ✅
-   - Image analysis ✅
+   - Image analysis ✅ 
    - Document parsing (PDF, DOCX, etc.) ✅
    - Audio transcription ✅
 
@@ -42,7 +50,42 @@
    - Reduced auto-git suggestions when not relevant
    - Better focus on actual screenshot content
 
-## Next Phase: Command Execution Feature
+## Phase 1: Settings & Configuration System
+
+### 🎯 Goal
+Add user settings for customizing Linux Helper before implementing command execution.
+
+### 🔧 Settings to Implement (Easy, Safe)
+1. **Screenshot Settings**
+   - Custom screenshot save location (default: ~/Pictures/screenshots/)
+   - Screenshot filename format options
+   - Auto-delete old screenshots after X days
+
+2. **Hotkey Settings** 
+   - Customizable screenshot hotkey (default: F10)
+   - Enable/disable hotkey functionality
+   - Modifier key combinations (Ctrl+F10, Alt+F10, etc.)
+
+3. **UI/Theme Settings**
+   - Theme selection (Dark/Light/Auto)
+   - Accent color picker 
+   - Font size adjustment
+   - Chat bubble styles
+
+4. **Analysis Settings**
+   - Linux distro selection for contextual help
+   - Learning mode toggle (beginner explanations)
+   - Command suggestion verbosity level
+
+### 📁 Implementation Files
+- `src/screens/SettingsPage/SettingsPage.tsx` [NEW]
+- `src/utils/settings.ts` [NEW] 
+- `electron/main.ts` [MODIFY] - hotkey registration
+- Add settings route to navigation
+
+---
+
+## Phase 2: Command Execution Feature
 
 ### 🎯 Goal
 Transform Linux Helper from "suggestion tool" to "interactive learning assistant" that can execute suggested commands safely.

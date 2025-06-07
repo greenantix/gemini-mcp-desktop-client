@@ -57,16 +57,16 @@ export default function ChatPage() {
   };
 
   // Handle messages from Linux Helper
-  const handleLinuxHelperMessage = (message: string, screenshot?: string) => {
+  const handleLinuxHelperMessage = (message: string, screenshot?: string, screenshotMeta?: {filename: string, size: number}) => {
     const newMessage: ChatMessage = {
       id: uuidv4(),
       role: "model",
       parts: [{ text: message }],
       timestamp: new Date().toISOString(),
       files: screenshot ? [{
-        name: "screenshot.png",
+        name: screenshotMeta?.filename || "screenshot.png",
         type: "image/png",
-        size: 0,
+        size: screenshotMeta?.size || 0,
         url: screenshot,
         content: screenshot
       }] : undefined

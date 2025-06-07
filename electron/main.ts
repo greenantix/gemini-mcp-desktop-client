@@ -78,7 +78,7 @@ function ensureScreenshotDirectory(): string {
 }
 
 // Save screenshot to local file
-async function saveScreenshotLocally(screenshotDataUrl: string): Promise<string | null> {
+async function saveScreenshotLocally(screenshotDataUrl: string): Promise<{filepath: string, filename: string, size: number} | null> {
   try {
     const screenshotDir = ensureScreenshotDirectory();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -91,7 +91,12 @@ async function saveScreenshotLocally(screenshotDataUrl: string): Promise<string 
     
     fs.writeFileSync(filepath, buffer);
     console.log(`💾 Screenshot saved: ${filepath}`);
-    return filepath;
+    
+    return {
+      filepath,
+      filename,
+      size: buffer.length
+    };
   } catch (error) {
     console.error("Failed to save screenshot:", error);
     return null;
@@ -99,7 +104,7 @@ async function saveScreenshotLocally(screenshotDataUrl: string): Promise<string 
 }
 
 // Screenshot capture function
-async function captureActiveMonitorScreenshot(): Promise<string | null> {
+async function captureActiveMonitorScreenshot(): Promise<{dataUrl: string, filename: string, filepath: string, size: number} | null> {
   try {
     const sources = await desktopCapturer.getSources({
       types: ["screen"],
@@ -112,9 +117,16 @@ async function captureActiveMonitorScreenshot(): Promise<string | null> {
       const dataUrl = screenshot.toDataURL();
       
       // Save screenshot locally
-      await saveScreenshotLocally(dataUrl);
+      const saveResult = await saveScreenshotLocally(dataUrl);
       
-      return dataUrl;
+      if (saveResult) {
+        return {
+          dataUrl,
+          filename: saveResult.filename,
+          filepath: saveResult.filepath,
+          size: saveResult.size
+        };
+      }
     }
     return null;
   } catch (error) {
@@ -129,13 +141,16 @@ async function handleLinuxHelperHotkey() {
     // First hotkey press - capture and analyze
     console.log("🔥 Linux Helper activated - capturing screenshot...");
     
-    const screenshot = await captureActiveMonitorScreenshot();
-    if (screenshot) {
-      helperState.lastScreenshot = screenshot;
+    const screenshotData = await captureActiveMonitorScreenshot();
+    if (screenshotData) {
+      helperState.lastScreenshot = screenshotData.dataUrl;
       
-      // Send screenshot to chat for analysis
+      // Send screenshot with metadata to chat for analysis
       win.webContents.send("linux-helper-screenshot", {
-        screenshot,
+        screenshot: screenshotData.dataUrl,
+        filename: screenshotData.filename,
+        filepath: screenshotData.filepath,
+        size: screenshotData.size,
         action: "analyze"
       });
       
@@ -309,6 +324,18 @@ ipcMain.handle("get-info", async () => {
 ipcMain.handle("get-mic-status", async () => {
   const status = await checkAndRequestMicrophonePermission();
   return status;
+});
+
+// Open screenshots folder
+ipcMain.handle("open-screenshots-folder", async () => {
+  try {
+    const screenshotDir = ensureScreenshotDirectory();
+    await shell.openPath(screenshotDir);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to open screenshots folder:", error);
+    return { success: false, error: error.message };
+  }
 });
 
 // Linux Helper IPC handlers

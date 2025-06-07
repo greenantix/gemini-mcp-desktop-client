@@ -12,6 +12,8 @@ import {
   globalShortcut,
   nativeImage,
 } from "electron";
+import * as fs from "fs";
+import * as os from "os";
 // import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -57,6 +59,45 @@ const helperState: LinuxHelperState = {
   lastSuggestions: null,
 };
 
+// Screenshot save directory setup
+function ensureScreenshotDirectory(): string {
+  const homeDir = os.homedir();
+  const screenshotDir = path.join(homeDir, "Pictures", "screenshots");
+  
+  try {
+    if (!fs.existsSync(screenshotDir)) {
+      fs.mkdirSync(screenshotDir, { recursive: true });
+      console.log(`📁 Created screenshot directory: ${screenshotDir}`);
+    }
+    return screenshotDir;
+  } catch (error) {
+    console.error("Failed to create screenshot directory:", error);
+    // Fallback to home directory
+    return homeDir;
+  }
+}
+
+// Save screenshot to local file
+async function saveScreenshotLocally(screenshotDataUrl: string): Promise<string | null> {
+  try {
+    const screenshotDir = ensureScreenshotDirectory();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `linux-helper-${timestamp}.png`;
+    const filepath = path.join(screenshotDir, filename);
+    
+    // Remove data:image/png;base64, prefix
+    const base64Data = screenshotDataUrl.replace(/^data:image\/png;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    fs.writeFileSync(filepath, buffer);
+    console.log(`💾 Screenshot saved: ${filepath}`);
+    return filepath;
+  } catch (error) {
+    console.error("Failed to save screenshot:", error);
+    return null;
+  }
+}
+
 // Screenshot capture function
 async function captureActiveMonitorScreenshot(): Promise<string | null> {
   try {
@@ -68,7 +109,12 @@ async function captureActiveMonitorScreenshot(): Promise<string | null> {
     if (sources.length > 0) {
       // Get the primary display screenshot
       const screenshot = sources[0].thumbnail;
-      return screenshot.toDataURL();
+      const dataUrl = screenshot.toDataURL();
+      
+      // Save screenshot locally
+      await saveScreenshotLocally(dataUrl);
+      
+      return dataUrl;
     }
     return null;
   } catch (error) {
@@ -177,6 +223,7 @@ async function checkAndRequestMicrophonePermission(): Promise<boolean> {
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   win = new BrowserWindow({
+    title: "Linux Helper - Pop!_OS Assistant",
     width,
     height,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),

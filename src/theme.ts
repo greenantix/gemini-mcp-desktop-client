@@ -1,42 +1,48 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-import { deepPurple, grey } from '@mui/material/colors';
+import { deepPurple, grey, orange } from '@mui/material/colors';
 
-// Define your color palette
-const primaryColor = deepPurple[500]; // Example: A nice purple
-const secondaryColor = grey[700];
-const backgroundColor = grey[50]; // Light grey background
-const paperColor = '#ffffff';
+// Pop OS / Papirus Dark Theme Colors
+const primaryColor = '#ffa726'; // Pop OS orange accent
+const secondaryColor = '#48b9c7'; // Teal accent
+const backgroundColor = '#2d2d2d'; // Dark background like Pop OS
+const paperColor = '#3c3c3c'; // Slightly lighter for cards/papers
+const surfaceColor = '#424242'; // For elevated surfaces
 const userBubbleColor = primaryColor;
-const modelBubbleColor = grey[200];
+const modelBubbleColor = '#4a4a4a'; // Dark grey for AI responses
 
 let theme = createTheme({
   palette: {
+    mode: 'dark', // Enable dark mode
     primary: {
       main: primaryColor,
       contrastText: '#ffffff',
     },
     secondary: {
       main: secondaryColor,
+      contrastText: '#ffffff',
     },
     background: {
       default: backgroundColor,
       paper: paperColor,
     },
+    surface: {
+      main: surfaceColor,
+    },
     text: {
-      primary: grey[900],
-      secondary: grey[600],
+      primary: '#ffffff', // White text for dark theme
+      secondary: '#b0b0b0', // Light grey for secondary text
     },
     // Custom colors for chat bubbles
     userBubble: {
       main: userBubbleColor,
-      contrastText: '#ffffff',
+      contrastText: '#000000', // Black text on orange
     },
     modelBubble: {
       main: modelBubbleColor,
-      contrastText: grey[900],
+      contrastText: '#ffffff', // White text on dark grey
     },
-    // Define divider color based on background
-    divider: grey[300],
+    // Define divider color for dark theme
+    divider: '#555555',
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', // Or choose another font
@@ -94,10 +100,10 @@ let theme = createTheme({
      MuiAppBar: {
         styleOverrides: {
             root: {
-                 backgroundColor: paperColor, // White AppBar
-                 color: grey[800], // Dark text on white AppBar
-                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', // Subtle shadow
-                 // borderBottom: `1px solid ${grey[300]}`, // Or a border
+                 backgroundColor: paperColor, // Dark paper color for AppBar
+                 color: '#ffffff', // White text on dark AppBar
+                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)', // Darker shadow for dark theme
+                 borderBottom: `1px solid #555555`, // Subtle border
             }
         }
      }
@@ -112,10 +118,12 @@ declare module '@mui/material/styles' {
   interface Palette {
     userBubble: Palette['primary'];
     modelBubble: Palette['primary'];
+    surface: Palette['primary'];
   }
   interface PaletteOptions {
     userBubble?: PaletteOptions['primary'];
     modelBubble?: PaletteOptions['primary'];
+    surface?: PaletteOptions['primary'];
   }
 }
 

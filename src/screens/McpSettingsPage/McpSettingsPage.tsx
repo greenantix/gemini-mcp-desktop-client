@@ -607,7 +607,7 @@ export default function SettingsPage() {
             sx={{
               minHeight: 400,
               p: 2,
-              backgroundColor: snapshot.isDraggingOver ? "#e0f7fa" : color, // Change background on drag over
+              backgroundColor: snapshot.isDraggingOver ? "rgba(255, 167, 38, 0.1)" : color, // Orange tint on drag over for dark theme
               transition: "background-color 0.3s ease", // Smoother transition
               borderRadius: 2,
               boxShadow: 3,
@@ -693,8 +693,8 @@ export default function SettingsPage() {
                     sx={{
                       p: 1.5,
                       backgroundColor: snapshot.isDragging
-                        ? "#f5f5f5"
-                        : "#ffffff", // Change background when dragging item
+                        ? "rgba(255, 167, 38, 0.15)"
+                        : "background.paper", // Use theme background paper color
                       borderRadius: 2,
                       boxShadow: snapshot.isDragging ? 6 : 2, // Increase shadow when dragging
                       display: "flex",
@@ -771,13 +771,13 @@ export default function SettingsPage() {
                 <Typography variant="h6" gutterBottom fontWeight="medium">
                   Enabled MCP Servers (used by LLM)
                 </Typography>
-                {renderList(leftList, "left", "#e3f2fd")}
+                {renderList(leftList, "left", "rgba(255, 167, 38, 0.05)")}
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="h6" gutterBottom fontWeight="medium">
                   Available MCP Servers
                 </Typography>
-                {renderList(rightList, "right", "#fff8e1")}
+                {renderList(rightList, "right", "rgba(72, 185, 199, 0.05)")}
               </Grid>
             </Grid>
           </DragDropContext>

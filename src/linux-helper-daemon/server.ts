@@ -18,12 +18,17 @@ export class DaemonServer {
   private httpServer?: http.Server;
   private socketServer?: net.Server;
   private isRunning = false;
+  private hotkeyCallback?: () => Promise<void>;
 
   constructor(
     private port: number,
     private socketPath: string,
     private logger: Logger
   ) {}
+
+  setHotkeyCallback(callback: () => Promise<void>): void {
+    this.hotkeyCallback = callback;
+  }
 
   async start(): Promise<void> {
     try {
@@ -164,9 +169,20 @@ export class DaemonServer {
           };
           
         case 'capture':
-          // Trigger screenshot capture
-          // This will be implemented when we integrate with existing screenshot logic
-          return { success: true, data: 'Screenshot capture triggered' };
+          // Trigger screenshot capture via hotkey callback
+          if (this.hotkeyCallback) {
+            try {
+              await this.hotkeyCallback();
+              return { success: true, data: 'Screenshot capture initiated' };
+            } catch (error) {
+              return { 
+                success: false, 
+                error: `Screenshot capture failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+              };
+            }
+          } else {
+            return { success: false, error: 'Hotkey callback not registered' };
+          }
           
         case 'execute':
           // Execute command

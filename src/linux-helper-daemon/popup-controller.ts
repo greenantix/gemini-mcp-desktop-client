@@ -48,11 +48,11 @@ export class PopupController {
 
   private async startPopupProcess(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const popupScript = path.join(__dirname, '..', 'linux-helper-popup', 'popup-main.js');
+      const popupScript = path.join(__dirname, 'popup-main.js');
       
       // Check if popup script exists
       if (!fs.existsSync(popupScript)) {
-        // Fallback: use the existing popup structure
+        // Fallback: use the basic popup
         const fallbackScript = path.join(__dirname, 'popup-process.js');
         this.createFallbackPopupScript(fallbackScript);
         
@@ -62,10 +62,12 @@ export class PopupController {
           stdio: ['pipe', 'pipe', 'pipe']
         });
       } else {
-        this.logger.info(`Starting popup process: ${popupScript}`);
-        this.popupProcess = spawn('node', [popupScript], {
+        this.logger.info(`Starting Electron popup process: ${popupScript}`);
+        // Use electron to run the popup
+        this.popupProcess = spawn('npx', ['electron', popupScript], {
           detached: false,
-          stdio: ['pipe', 'pipe', 'pipe']
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: { ...process.env, DISPLAY: process.env.DISPLAY || ':0' }
         });
       }
 
@@ -269,6 +271,26 @@ process.on('SIGTERM', async () => {
       this.logger.debug('Popup shown in loading state');
     } catch (error) {
       this.logger.error('Failed to show popup loading state:', error);
+    }
+  }
+
+  async showLoadingStateAtPosition(cursorPosition: { x: number; y: number }): Promise<void> {
+    try {
+      // First send cursor position
+      await this.sendMessage({
+        type: 'position',
+        data: { x: cursorPosition.x, y: cursorPosition.y }
+      });
+      
+      // Then show loading state
+      await this.sendMessage({
+        type: 'show',
+        data: { status: 'loading', title: 'Analyzing screenshot...' }
+      });
+      
+      this.logger.debug(`Popup shown at cursor position (${cursorPosition.x}, ${cursorPosition.y})`);
+    } catch (error) {
+      this.logger.error('Failed to show popup at position:', error);
     }
   }
 

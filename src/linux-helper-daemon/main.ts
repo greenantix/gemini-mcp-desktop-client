@@ -5,6 +5,7 @@ import { ScreenshotManager } from './screenshot';
 import { DaemonServer } from './server';
 import { Logger } from './logger';
 import { PopupController } from './popup-controller';
+import { CursorTracker } from './cursor-tracker';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -24,6 +25,7 @@ class LinuxHelperDaemon {
   private screenshotManager: ScreenshotManager;
   private popupController: PopupController;
   private server: DaemonServer;
+  private cursorTracker: CursorTracker;
   private logger: Logger;
   private isRunning = false;
 
@@ -35,6 +37,7 @@ class LinuxHelperDaemon {
     this.screenshotManager = new ScreenshotManager(this.logger);
     this.popupController = new PopupController(this.logger);
     this.server = new DaemonServer(this.config.port, this.config.socketPath, this.logger);
+    this.cursorTracker = new CursorTracker(this.logger);
     
     this.setupEventHandlers();
   }
@@ -64,15 +67,19 @@ class LinuxHelperDaemon {
   }
 
   private setupEventHandlers(): void {
-    // Handle hotkey activation
-    this.hotkeyManager.onHotkeyPress(async () => {
+    // Create the hotkey handler function
+    const hotkeyHandler = async () => {
       this.logger.info('Hotkey pressed, capturing screenshot');
       
       try {
+        // Get cursor position for popup positioning
+        const cursorPos = await this.cursorTracker.getCurrentPosition();
+        this.logger.debug(`Cursor position: ${cursorPos.x}, ${cursorPos.y}`);
+        
         const screenshot = await this.screenshotManager.captureActiveMonitor();
         if (screenshot) {
-          // Show popup immediately
-          await this.popupController.showLoadingState();
+          // Send cursor position to popup and show loading state
+          await this.popupController.showLoadingStateAtPosition(cursorPos);
           
           // Analyze screenshot
           const analysis = await this.analyzeScreenshot(screenshot.dataUrl);
@@ -84,7 +91,13 @@ class LinuxHelperDaemon {
         this.logger.error('Failed to handle hotkey press:', error);
         await this.popupController.showError('Screenshot capture failed');
       }
-    });
+    };
+
+    // Register hotkey handler
+    this.hotkeyManager.onHotkeyPress(hotkeyHandler);
+
+    // Register the same handler with the server for HTTP/socket triggers
+    this.server.setHotkeyCallback(hotkeyHandler);
 
     // Handle popup interactions will be implemented via IPC
 

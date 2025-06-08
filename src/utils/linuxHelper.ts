@@ -348,12 +348,7 @@ RESPONSE FORMAT:
 [Describe the screenshot: code, errors, terminals, IDE, etc.]
 
 ## 💻 Smart Solution
-Provide ONE intelligent command chain that solves the coding issue:
-
-\`\`\`bash
-# Fix the specific issue and continue development workflow
-npm run lint && npm run dev
-\`\`\`
+Based on what you see in the screenshot, provide ONE specific command that addresses the actual issue:
 
 ## 🧠 Context Analysis  
 How this relates to their current ${enhancedContext.project?.packageInfo?.name || 'project'} development:
@@ -362,11 +357,12 @@ How this relates to their current ${enhancedContext.project?.packageInfo?.name |
 - Suggest workflow improvements
 
 CRITICAL RULES:
-- ONE command chain in ONE \`\`\`bash block
-- Chain with && operators for complete solutions
-- Skip unnecessary navigation (they're in ${enhancedContext.currentDir})
-- Reference actual project files and context when relevant
-- Make solutions project-specific, not generic
+- ACTUALLY LOOK AT THE SCREENSHOT - don't give generic responses
+- If you see specific errors, provide commands to fix THOSE errors
+- If you see specific code, reference THAT code
+- If you see terminals, respond to what's actually shown
+- NO GENERIC "npm run lint" responses unless you actually see linting errors
+- Be specific to what's visually shown, not templated responses
 
 Keep responses focused on their actual development workflow and current project state.`;
 }

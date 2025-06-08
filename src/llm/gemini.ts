@@ -1,17 +1,17 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { app } from "electron";
+// import fs from "fs"; // Unused
+// import path from "path"; // Unused
+// import { fileURLToPath } from "url"; // Unused
+// import { app } from "electron"; // Unused
 
-const isDev = process.env.NODE_ENV === "development";
+// const isDev = process.env.NODE_ENV === "development"; // Unused
 // Convert `import.meta.url` to a file path
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url); // Unused
+// const __dirname = path.dirname(__filename); // Unused
 
-const configPath = isDev
-  ? "/home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/serverConfig.json" // Hardcoded for development
-  : path.join(app.getPath("userData"), "serverConfig.json"); // for packaged app
+// const configPath = isDev // Unused
+//   ? "/home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/serverConfig.json" // Hardcoded for development
+//   : path.join(app.getPath("userData"), "serverConfig.json"); // for packaged app
 
 
 export async function initializeAndGetModel(model: string,contentReadFromFile:string|boolean) {

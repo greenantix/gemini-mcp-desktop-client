@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const configPath = isDev
-  ? path.join(__dirname, "../src/backend/configurations/serverConfig.json") // for development
+  ? path.join(__dirname, "../../../configurations/serverConfig.json") // for development
   : path.join(app.getPath("userData"), "serverConfig.json");
 // Initialize GoogleGenAI client
 // CRITICAL: Store your API key in environment variables, do not hardcode it.
@@ -43,22 +43,40 @@ const parseForm = (
   });
 };
 
+interface ApiError extends Error {
+  status?: number;
+  code?: number | string;
+  httpCode?: number;
+  response?: {
+    data?: {
+      error?: string | { message?: string };
+    };
+  };
+  details?: string | Record<string, unknown>;
+}
+
 export const audioToTextHandler = async (
   req: Request,
   res: Response
-): Promise<Response | null | undefined> => {
-  const data = fs.readFileSync(configPath, "utf-8");
-  if (!data) {
-    return null;
+): Promise<void> => {
+  let serverConfigurations;
+  try {
+    const data = fs.readFileSync(configPath, "utf-8");
+    serverConfigurations = JSON.parse(data);
+  } catch (readError) {
+    console.error("Failed to read or parse serverConfig.json:", readError);
+    res.status(500).json({ error: "Server configuration error." });
+    return;
   }
-  const serverConfigurations = JSON.parse(data);
+
   const { GEMINI_API_KEY } = serverConfigurations;
   const ai = new GoogleGenAI({
     apiKey: GEMINI_API_KEY,
   });
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method Not Allowed" });
+    res.status(405).json({ error: "Method Not Allowed" });
+    return;
   }
 
   try {
@@ -68,15 +86,17 @@ export const audioToTextHandler = async (
     const uploadedFileArray = files.audioFile;
 
     if (!uploadedFileArray || uploadedFileArray.length === 0) {
-      return res.status(400).json({ error: "No audio file was uploaded." });
+      res.status(400).json({ error: "No audio file was uploaded." });
+      return;
     }
 
     const audioFile = uploadedFileArray[0] as FormidableFile;
 
     if (!audioFile.filepath || !audioFile.mimetype) {
-      return res
+      res
         .status(400)
         .json({ error: "Uploaded file is missing path or MIME type." });
+      return;
     }
 
     console.log(
@@ -88,9 +108,10 @@ export const audioToTextHandler = async (
     if (!GEMINI_API_KEY) {
       // Check if API key was loaded
       console.error("Google GenAI API key is missing. Cannot upload file.");
-      return res
+      res
         .status(500)
         .json({ error: "Server configuration error: Missing API key." });
+      return;
     }
 
     // 1. Upload the received file to Google GenAI's file service
@@ -134,23 +155,38 @@ export const audioToTextHandler = async (
 
     // 4. Return the transcription to the client
     // The frontend expects a 'transcript' field in the JSON response.
-    return res.status(200).json({ transcript: genAIResponse.text });
-  } catch (err: any) {
+    res.status(200).json({ transcript: genAIResponse.text });
+  } catch (error: unknown) {
+    const err = error as ApiError; // Type assertion
     console.error("Error in audioToText API:", err);
 
     let errorMessage = "Failed to process audio.";
-    const statusCode = err.status || err.code || err.httpCode || 500;
+    const rawStatusCode = err.status || err.code || err.httpCode || 500;
+    let numericStatusCode = 500;
+
+    if (typeof rawStatusCode === 'number') {
+      numericStatusCode = rawStatusCode;
+    } else if (typeof rawStatusCode === 'string') {
+      const parsedCode = parseInt(rawStatusCode, 10);
+      if (!isNaN(parsedCode)) {
+        numericStatusCode = parsedCode;
+      }
+    }
 
     if (err.response && err.response.data && err.response.data.error) {
-      // Axios-like error
-      errorMessage = err.response.data.error.message || err.response.data.error;
+      const errorData = err.response.data.error;
+      if (typeof errorData === 'object' && errorData.message) {
+        errorMessage = errorData.message;
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      }
     } else if (err.message) {
       errorMessage = err.message;
-    } else if (typeof err === "string") {
+    } else if (typeof err === "string") { // This case might be redundant if caught as ApiError
       errorMessage = err;
     }
 
     const errorDetails = err.details || err.toString();
-    res.status(statusCode).json({ error: errorMessage, details: errorDetails });
+    res.status(numericStatusCode).json({ error: errorMessage, details: errorDetails });
   }
 };

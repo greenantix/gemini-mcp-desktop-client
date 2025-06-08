@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router } from "express";
 import { chatWithLLM } from "../../controllers/llmChat/chatLLM";
 import { audioToTextHandler } from "../../controllers/llmChat/audioToText";

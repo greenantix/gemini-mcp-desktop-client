@@ -180,7 +180,7 @@ async function checkAndRequestMicrophonePermission(): Promise<boolean> {
     return true;
   }
 
-  let accessStatus = systemPreferences.getMediaAccessStatus("microphone");
+  const accessStatus = systemPreferences.getMediaAccessStatus("microphone");
   console.log(`Initial microphone access status: ${accessStatus}`);
 
   if (accessStatus === "granted") {

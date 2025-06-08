@@ -110,8 +110,8 @@ export const AppThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => 
 
   const loadThemeFromSettings = async () => {
     try {
-      const result = await (window as any).api.getSettings();
-      if (result.success && result.settings.theme) {
+      const result = await window.api.getSettings();
+      if (result.success && result.settings?.theme) { // Added optional chaining for settings
         setThemeMode(result.settings.theme);
       }
     } catch (error) {
@@ -132,13 +132,13 @@ export const AppThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => 
 
   const saveThemeToSettings = async (mode: 'dark' | 'light') => {
     try {
-      const currentSettingsResult = await (window as any).api.getSettings();
-      if (currentSettingsResult.success) {
+      const currentSettingsResult = await window.api.getSettings();
+      if (currentSettingsResult.success && currentSettingsResult.settings) { // Ensure settings exist
         const updatedSettings = {
           ...currentSettingsResult.settings,
           theme: mode,
         };
-        await (window as any).api.saveSettings(updatedSettings);
+        await window.api.saveSettings(updatedSettings);
       }
     } catch (error) {
       console.error('Failed to save theme to settings:', error);

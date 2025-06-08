@@ -6,6 +6,7 @@ import {
   FunctionCall,
   GenerateContentResponse,
   GenerateContentResult,
+  ChatSession,
 } from "@google/generative-ai";
 import type { Request, Response } from "express";
 import formidable from "formidable"; // Removed 'File as FormidableFile' as it's not used
@@ -25,6 +26,16 @@ import { parseDocxFile } from "../../../utils/llmChat/parsers/docxParser";
 import { parseExcelFile } from "../../../utils/llmChat/parsers/excelParser";
 import { parsePptxFile } from "../../../utils/llmChat/parsers/pptxParser";
 // import { parsePptFile } from "../../../utils/llmChat/parsers/pptParser";
+
+interface McpToolResultContentPart {
+  text?: string;
+  // other potential properties if known
+}
+
+interface McpToolResult {
+  content: string | McpToolResultContentPart[] | unknown; // More specific if possible
+  // other potential properties from tool result
+}
 
 const LOG_DIRECTORY = process.cwd();
 
@@ -123,7 +134,7 @@ const logChatInteraction = async (
   let logFilePath = "";
   try {
     const sanitizedModelName = modelName
-      .replace(/[^a-z0-9_\-\.]/gi, "_")
+      .replace(/[^a-z0-9_.-]/gi, "_") // Removed unnecessary escape for .
       .replace(/\.+$/, "");
     const safeModelName = sanitizedModelName || "unknown_model";
     const logFileName = `${safeModelName}.log`;
@@ -154,12 +165,12 @@ ${chatbotResponse}
 };
 
 async function sendMessageWithRetry(
-  chat: any,
+  chat: ChatSession,
   messageToSend: string | Part | Array<string | Part>,
   attemptInfo: string
 ): Promise<GenerateContentResult> {
   let attempt = 0;
-  let lastError: any = null;
+  let lastError: Error | null = null;
 
   while (attempt < TOTAL_GEMINI_API_ATTEMPTS) {
     attempt++;
@@ -167,7 +178,11 @@ async function sendMessageWithRetry(
       console.log(
         `  [API Attempt ${attempt}/${TOTAL_GEMINI_API_ATTEMPTS}] Sending ${attemptInfo} to Gemini...`
       );
-      const result = await chat.sendMessage(messageToSend);
+      // Ensure messageToSend is in the correct format for chat.sendMessage
+      const messageForApi = (typeof messageToSend === 'string' || Array.isArray(messageToSend))
+        ? messageToSend
+        : [messageToSend]; // Wrap single Part in an array
+      const result = await chat.sendMessage(messageForApi);
       if (result.response?.promptFeedback?.blockReason) {
         console.warn(
           `  [API Attempt ${attempt}] Gemini response potentially blocked: ${result.response.promptFeedback.blockReason}. Proceeding as API call succeeded.`
@@ -175,17 +190,18 @@ async function sendMessageWithRetry(
       }
       console.log(`  [API Attempt ${attempt}] SUCCESS sending ${attemptInfo}.`);
       return result;
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      const typedError = error as Error;
+      lastError = typedError;
       console.warn(
         `  [API Attempt ${attempt}/${TOTAL_GEMINI_API_ATTEMPTS}] FAILED sending ${attemptInfo}. Error:`,
-        error.message || error
+        typedError.message || typedError
       );
       const isRetryable =
-        error.message?.includes("500 Internal Server Error") ||
-        error.message?.includes("503 Service Unavailable") ||
-        error.message?.includes("fetch failed") ||
-        error.message?.includes("timeout");
+        typedError.message?.includes("500 Internal Server Error") ||
+        typedError.message?.includes("503 Service Unavailable") ||
+        typedError.message?.includes("fetch failed") ||
+        typedError.message?.includes("timeout");
 
       if (isRetryable && attempt < TOTAL_GEMINI_API_ATTEMPTS) {
         console.log(
@@ -208,7 +224,7 @@ async function sendMessageWithRetry(
   );
 }
 
-export const chatWithLLM = async (req: Request, res: Response) => {
+export const chatWithLLM = async (req: Request, res: Response): Promise<void> => {
   const {
     message: userMessageField,
     history,
@@ -285,10 +301,12 @@ export const chatWithLLM = async (req: Request, res: Response) => {
 
   // Allow file-only submissions or require a message
   if (!currentMessage && !contentFile) {
-    return res.status(400).json({ error: "Message or file is required" });
+    res.status(400).json({ error: "Message or file is required" });
+    return;
   }
   if (!currentModelName) {
-    return res.status(400).json({ error: "Model name ('model') is required" });
+    res.status(400).json({ error: "Model name ('model') is required" });
+    return;
   }
   // Handle file-only uploads
   if (!currentMessage && contentFile) {
@@ -312,10 +330,11 @@ export const chatWithLLM = async (req: Request, res: Response) => {
 
     if (mcpClients.size === 0 && allGeminiTools.length > 0) {
       console.warn("Warning: Tools defined but no MCP Servers are connected.");
-      return res.status(503).json({
+      res.status(503).json({
         error: "Tools require MCP Servers, but none are connected.",
         toolNames: allGeminiTools.map((t) => t.name),
       });
+      return;
     }
 
     const geminiModel = await initializeAndGetModel(
@@ -323,9 +342,10 @@ export const chatWithLLM = async (req: Request, res: Response) => {
       contentReadFromFile
     );
     if (!geminiModel) {
-      return res.status(503).json({
+      res.status(503).json({
         error: `Server LLM '${currentModelName}' not configured or failed to initialize`,
       });
+      return;
     }
 
     // Ensure history starts with user message for Gemini API
@@ -344,9 +364,16 @@ export const chatWithLLM = async (req: Request, res: Response) => {
           : undefined,
     });
 
+    // Ensure currentMessage is a string before sending
+    if (typeof currentMessage !== 'string') {
+      // This case should ideally be handled by earlier logic, but as a safeguard:
+      console.error("Critical: currentMessage is not a string before sending to LLM. This should not happen.");
+      res.status(500).json({ error: "Internal error: message content is invalid." });
+      return;
+    }
     let result: GenerateContentResult = await sendMessageWithRetry(
       chat,
-      currentMessage,
+      currentMessage, // Now confirmed to be a string
       "initial user message"
     );
     let response: GenerateContentResponse | undefined = result.response;
@@ -399,8 +426,8 @@ export const chatWithLLM = async (req: Request, res: Response) => {
 
           let attempt = 0;
           let success = false;
-          let mcpToolResult: any = null;
-          let lastToolError: any = null;
+          let mcpToolResult: McpToolResult | null = null;
+          let lastToolError: Error | null = null;
 
           while (attempt < TOTAL_MCP_TOOL_ATTEMPTS && !success) {
             attempt++;
@@ -408,20 +435,22 @@ export const chatWithLLM = async (req: Request, res: Response) => {
               console.log(
                 `  [MCP Tool Attempt ${attempt}/${TOTAL_MCP_TOOL_ATTEMPTS}] Calling tool "${toolName}"...`
               );
-              mcpToolResult = await targetClient.callTool({
+              // Assuming callTool returns something compatible with McpToolResult
+              mcpToolResult = (await targetClient.callTool({
                 name: toolName,
                 arguments: toolArgs as { [x: string]: unknown } | undefined,
-              });
+              })) as McpToolResult; // Cast if necessary, or refine McpToolResult type
               console.log(
                 `  [MCP Tool Attempt ${attempt}] SUCCESS for tool "${toolName}". Raw Response:`,
                 mcpToolResult
               );
               success = true;
-            } catch (toolError: any) {
-              lastToolError = toolError;
+            } catch (toolError: unknown) {
+              const typedToolError = toolError as Error;
+              lastToolError = typedToolError;
               console.warn(
                 `  [MCP Tool Attempt ${attempt}/${TOTAL_MCP_TOOL_ATTEMPTS}] FAILED for tool "${toolName}". Error:`,
-                toolError.message || toolError
+                typedToolError.message || typedToolError
               );
               if (attempt < TOTAL_MCP_TOOL_ATTEMPTS) {
                 console.log(
@@ -438,18 +467,15 @@ export const chatWithLLM = async (req: Request, res: Response) => {
           }
 
           if (success && mcpToolResult) {
-            let responseContent: any =
+            let responseContent: string | unknown = // More specific than any
               "Tool executed successfully but produced no specific content.";
 
             try {
               if (typeof mcpToolResult.content === "string") {
                 responseContent = mcpToolResult.content;
-              } else if (
-                Array.isArray(mcpToolResult.content) &&
-                mcpToolResult.content.length > 0
-              ) {
-                const texts = mcpToolResult.content
-                  .map((part: any) =>
+              } else if (Array.isArray(mcpToolResult.content)) {
+                const texts = (mcpToolResult.content as McpToolResultContentPart[])
+                  .map((part: McpToolResultContentPart) =>
                     part && typeof part.text === "string" ? part.text : null
                   )
                   .filter(
@@ -457,9 +483,10 @@ export const chatWithLLM = async (req: Request, res: Response) => {
                   );
                 if (texts.length > 0) {
                   responseContent = texts.join("\n");
-                } else {
+                } else if (mcpToolResult.content.length > 0) { // If array but no text parts, stringify
                   responseContent = JSON.stringify(mcpToolResult.content);
                 }
+                // If array is empty, responseContent remains the default message
               } else if (
                 mcpToolResult.content !== null &&
                 mcpToolResult.content !== undefined
@@ -572,17 +599,18 @@ export const chatWithLLM = async (req: Request, res: Response) => {
 
     console.log("Final Gemini response being sent to user:", finalAnswer);
 
-    // Use currentModelName and currentMessage which are confirmed strings here
-    await logChatInteraction(currentModelName, currentMessage, finalAnswer);
+    // Ensure currentMessage is a string for logging
+    await logChatInteraction(currentModelName, currentMessage as string, finalAnswer);
 
     const finalHistory = await chat.getHistory();
     res.json({ reply: finalAnswer, history: finalHistory });
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error("Error in chatWithLLM:", err.stack || err);
     // Use currentModelName and currentMessage if available, otherwise fall back
     await logChatInteraction(
       currentModelName || "unknown_model_on_error",
-      currentMessage || "unknown_query_on_error",
+      (currentMessage as string) || "unknown_query_on_error", // Cast or provide default
       `Error during processing: ${err.message || "Unknown server error"}`
     );
     res.status(500).json({

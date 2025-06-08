@@ -1,5 +1,26 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
+interface LinuxHelperScreenshotData {
+  screenshot: string;
+  filename: string;
+  filepath: string;
+  size: number;
+  action: "analyze";
+}
+
+interface LinuxHelperExecuteData {
+  action: "execute";
+}
+
+interface AppSettings {
+  screenshotLocation: string;
+  hotkey: string;
+  theme: 'dark' | 'light';
+  autoSaveScreenshots: boolean;
+  showSystemContext: boolean;
+  linuxDistro: string;
+}
+
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {
@@ -27,11 +48,11 @@ contextBridge.exposeInMainWorld('api', {
   getMicStatus: () => ipcRenderer.invoke('get-mic-status'),
   
   // Linux Helper APIs
-  onLinuxHelperScreenshot: (callback: (data: any) => void) => {
-    ipcRenderer.on('linux-helper-screenshot', (_, data) => callback(data));
+  onLinuxHelperScreenshot: (callback: (data: LinuxHelperScreenshotData) => void) => {
+    ipcRenderer.on('linux-helper-screenshot', (_, data) => callback(data as LinuxHelperScreenshotData));
   },
-  onLinuxHelperExecute: (callback: (data: any) => void) => {
-    ipcRenderer.on('linux-helper-execute', (_, data) => callback(data));
+  onLinuxHelperExecute: (callback: (data: LinuxHelperExecuteData) => void) => {
+    ipcRenderer.on('linux-helper-execute', (_, data) => callback(data as LinuxHelperExecuteData));
   },
   onLinuxHelperDismissed: (callback: () => void) => {
     ipcRenderer.on('linux-helper-dismissed', () => callback());
@@ -53,11 +74,11 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('open-screenshots-folder'),
   
   // Settings APIs
-  getSettings: () => 
+  getSettings: () =>
     ipcRenderer.invoke('get-settings'),
-  saveSettings: (settings: any) => 
+  saveSettings: (settings: AppSettings) =>
     ipcRenderer.invoke('save-settings', settings),
-  selectFolder: () => 
+  selectFolder: () =>
     ipcRenderer.invoke('select-folder'),
   
   // Command pasting API

@@ -64,8 +64,8 @@ export default function ChatHeader({
     try {
       console.log('🐧 Linux Helper button clicked');
       // For now, just simulate the hotkey press
-      if ((window as any).ipcRenderer) {
-        (window as any).ipcRenderer.send('manual-linux-helper-trigger');
+      if (window.ipcRenderer) {
+        window.ipcRenderer.send('manual-linux-helper-trigger');
       }
     } catch (error) {
       console.error('Failed to trigger Linux Helper:', error);

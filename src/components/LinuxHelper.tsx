@@ -4,36 +4,27 @@ interface LinuxHelperProps {
   onSendToChat: (message: string, screenshot?: string, screenshotMeta?: {filename: string, size: number}) => void;
 }
 
-interface CommandResult {
-  success: boolean;
-  stdout?: string;
-  stderr?: string;
-  error?: string;
-  requiresConfirmation?: boolean;
-  command?: string;
-}
+// Local type definitions (lines 7-110) are removed as they are now in src/global.d.ts
 
-interface AnalysisResult {
-  success: boolean;
-  analysis?: string;
-  error?: string;
-}
 
 const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
-  const [lastAnalysis, setLastAnalysis] = useState<string>("");
-  const [lastCommands, setLastCommands] = useState<string[]>([]);
+  // const [lastAnalysis, setLastAnalysis] = useState<string>(""); // Removed as lastAnalysis value is not used
+  const [lastCommands, setLastCommands] = useState<Array<{command: string, comment: string}>>([]);
   const [helperState, setHelperState] = useState<'idle' | 'ready-to-execute'>('idle');
 
   useEffect(() => {
     // Setup Linux Helper event listeners
-    const handleScreenshot = async (data: { screenshot: string; action: string; filename?: string; size?: number; filepath?: string }) => {
-      if (data.action === 'analyze') {
+    // The 'data' for handleScreenshot here is what's *sent* from main.ts,
+    // which might be slightly different from the strict preload interface if not all fields are always present.
+    // For now, using a more flexible 'HandleScreenshotData' for the callback.
+    const handleScreenshot = async (data: LinuxHelperScreenshotDataFromPreload) => { // Changed HandleScreenshotData to LinuxHelperScreenshotDataFromPreload
+      if (data.action === 'analyze') { // This check is fine as "analyze" is a string.
         try {
           // Send to main process for analysis
-          const result: AnalysisResult = await (window as any).api.analyzeScreenshot(data.screenshot);
+          const result = await window.api.analyzeScreenshot(data.screenshot);
           
           if (result.success && result.analysis) {
-            setLastAnalysis(result.analysis);
+            // setLastAnalysis(result.analysis); // Removed
             
             // Extract commands from the analysis
             const extractedCommands = extractCommandsFromMarkdown(result.analysis);
@@ -85,7 +76,7 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
         
         try {
           // Copy command to clipboard for user to paste
-          const result = await (window as any).api.pasteAtCursor(commandToPaste);
+          const result = await window.api.pasteAtCursor(commandToPaste);
           
           if (result.success) {
             // Send confirmation to chat with comment
@@ -114,14 +105,14 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
     };
 
     // Register event listeners
-    (window as any).api.onLinuxHelperScreenshot(handleScreenshot);
-    (window as any).api.onLinuxHelperExecute(handleExecute);
-    (window as any).api.onLinuxHelperDismissed(handleDismissed);
+    window.api.onLinuxHelperScreenshot(handleScreenshot);
+    window.api.onLinuxHelperExecute(handleExecute);
+    window.api.onLinuxHelperDismissed(handleDismissed);
 
     return () => {
-      (window as any).api.removeLinuxHelperListeners();
+      window.api.removeLinuxHelperListeners();
     };
-  }, [onSendToChat]);
+  }, [onSendToChat, helperState, lastCommands]); // Added helperState and lastCommands
 
   const extractCommandsFromMarkdown = (markdown: string): Array<{command: string, comment: string}> => {
     const commands: Array<{command: string, comment: string}> = [];

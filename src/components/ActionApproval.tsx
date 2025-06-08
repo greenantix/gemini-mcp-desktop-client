@@ -18,10 +18,12 @@ import {
   Visibility as PreviewIcon 
 } from '@mui/icons-material';
 
+type ChipColor = 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+
 interface SmartAction {
   type: 'read_file' | 'write_file' | 'replace_in_file' | 'search_files' | 'execute_command';
   description: string;
-  params: any;
+  params: Record<string, unknown>; // More specific than any
   safety: 'safe' | 'requires_approval' | 'dangerous';
   target?: string;
 }
@@ -47,7 +49,7 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
     return null;
   }
 
-  const getSafetyColor = (safety: string) => {
+  const getSafetyColor = (safety: string): ChipColor => {
     switch (safety) {
       case 'safe': return 'success';
       case 'requires_approval': return 'warning';
@@ -133,7 +135,7 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                     <Chip
                       label={`${getSafetyIcon(action.safety)} ${action.safety}`}
                       size="small"
-                      color={getSafetyColor(action.safety) as any}
+                      color={getSafetyColor(action.safety)}
                     />
                   </Box>
                 }

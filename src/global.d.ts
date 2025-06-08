@@ -1,5 +1,18 @@
 // global.d.ts
+interface Window {
+  electron?: {
+    ipcRenderer: {
+      invoke(channel: string, ...args: any[]): Promise<any>;
+      on(channel: string, listener: (event: any, ...args: any[]) => void): void;
+      removeListener(channel: string, listener: (event: any, ...args: any[]) => void): void;
+    };
+  };
+}
 
+// For custom events
+interface WindowEventMap {
+  'popup-state-update': CustomEvent<any>;
+}
 // Types based on preload.ts and component usage
 // Note: `IpcRenderer` type is expected to be available globally
 // via `vite-plugin-electron/electron-env` reference in `electron/electron-env.d.ts`.

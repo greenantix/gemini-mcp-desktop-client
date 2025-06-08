@@ -27,4 +27,12 @@ export default defineConfig({
         : {},
     }),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        popup: path.resolve(__dirname, 'src/linux-helper-popup/popup.html')
+      }
+    }
+  }
 })

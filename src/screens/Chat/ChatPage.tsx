@@ -150,22 +150,24 @@ export default function ChatPage() {
     screenshot?: string,
     screenshotMeta?: { filename: string; size: number }
   ) => {
-    // Convert screenshot data URL to File object if present
-    const files: File[] = [];
-    if (screenshot && screenshotMeta) {
-      try {
-        // Convert data URL to blob then to File
-        const response = await fetch(screenshot);
-        const blob = await response.blob();
-        const file = new File([blob], screenshotMeta.filename, { type: 'image/png' });
-        files.push(file);
-      } catch (error) {
-        console.error('Failed to convert screenshot to file:', error);
-      }
-    }
-    
-    // Send to chat using existing message submit handler
-    await handleMessageSubmit(message, files);
+    // Create F10 analysis message as assistant response (not user message)
+    const newMessage: ChatMessage = {
+      id: uuidv4(),
+      role: "model", // Show as assistant response, not user message
+      parts: [{ text: message }],
+      timestamp: new Date().toISOString(),
+      files: screenshot ? [{
+        name: screenshotMeta?.filename || "screenshot.png",
+        type: "image/png", 
+        size: screenshotMeta?.size || 0,
+        url: screenshot,
+        content: screenshot
+      }] : undefined
+    };
+
+    // Add to chat without triggering another AI response
+    setMessages(prev => [...prev, newMessage]);
+    scrollToBottom();
   };
 
   const handleMessageSubmit = async (

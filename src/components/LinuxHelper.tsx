@@ -42,20 +42,18 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
             // Debug: Log extracted commands
             console.log('🐧 Extracted commands:', extractedCommands);
             
-            // Create enhanced message with commands summary
-            let chatMessage = `🖼️ **Linux Helper Screenshot Analysis**\n\n${result.analysis}`;
+            // Create enhanced message with commands summary  
+            let chatMessage = `💻 **Personal Coding Assistant Analysis**\n\n${result.analysis}`;
             
             if (extractedCommands.length > 0) {
-              chatMessage += `\n\n🎯 **Commands Detected**: ${extractedCommands.length} command(s) ready`;
-              chatMessage += `\n💡 **Press F10 again** to copy the first command to clipboard`;
+              const firstCommand = extractedCommands[0];
+              const command = firstCommand.command || firstCommand;
+              const comment = firstCommand.comment || 'Execute solution';
               
-              // Show all detected commands for debugging
-              chatMessage += `\n\n📝 **Commands found**:`;
-              extractedCommands.forEach((cmd, i) => {
-                const command = cmd.command || cmd;
-                const comment = cmd.comment || 'Run command';
-                chatMessage += `\n${i + 1}. \`${command}\` - ${comment}`;
-              });
+              chatMessage += `\n\n🎯 **Smart Solution Ready**`;
+              chatMessage += `\n💡 **Press F10 again** to copy project-specific command`;
+              chatMessage += `\n\n⚡ **Command**: \`${command}\``;
+              chatMessage += `\n🧠 **Context**: ${comment}`;
             }
             
             // Send to chat with actual screenshot metadata
@@ -92,10 +90,10 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
           if (result.success) {
             // Send confirmation to chat with comment
             onSendToChat(
-              `📋 **Command copied to clipboard**:\n` +
+              `📋 **Command Chain Copied to Clipboard**:\n` +
               `\`${commandToPaste}\`\n\n` +
               `💬 **Purpose**: ${commandComment}\n` +
-              `💡 **Press Ctrl+V** to paste at your cursor location`
+              `💡 **Press Ctrl+V** to paste and execute this complete solution`
             );
           } else {
             onSendToChat(`❌ **Failed to copy command**: ${result.error}`);
@@ -128,7 +126,7 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
   const extractCommandsFromMarkdown = (markdown: string): Array<{command: string, comment: string}> => {
     const commands: Array<{command: string, comment: string}> = [];
     
-    // Extract from bash code blocks with comments
+    // Extract from bash code blocks - looking for ONE command chain
     const codeBlockRegex = /```bash\n(.*?)\n```/gs;
     let match;
     
@@ -136,24 +134,31 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
       const blockContent = match[1].trim();
       const lines = blockContent.split('\n');
       
-      let currentComment = '';
+      let comment = '';
+      let commandChain = '';
+      
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed.startsWith('#')) {
-          // This is a comment
-          currentComment = trimmed.substring(1).trim();
+          // Extract comment
+          comment = trimmed.substring(1).trim();
         } else if (trimmed && !trimmed.startsWith('#')) {
-          // This is a command
-          commands.push({
-            command: trimmed,
-            comment: currentComment || 'Run command'
-          });
-          currentComment = ''; // Reset comment for next command
+          // This is the command chain
+          commandChain = trimmed;
+          break; // Take the first non-comment line as the command chain
         }
+      }
+      
+      if (commandChain) {
+        commands.push({
+          command: commandChain,
+          comment: comment || 'Execute command chain'
+        });
+        break; // Only take the first command chain
       }
     }
     
-    // Fallback: Extract any commands from other code blocks
+    // Fallback: Extract any commands from other code blocks (old format)
     if (commands.length === 0) {
       const fallbackRegex = /```(?:bash|shell|sh)?\n(.*?)\n```/gs;
       while ((match = fallbackRegex.exec(markdown)) !== null) {
@@ -161,24 +166,15 @@ const LinuxHelper: React.FC<LinuxHelperProps> = ({ onSendToChat }) => {
         const blockCommands = commandBlock.split('\n').filter(cmd => 
           cmd.trim() && !cmd.trim().startsWith('#')
         );
-        blockCommands.forEach(cmd => {
+        if (blockCommands.length > 0) {
+          // Join multiple commands with &&
+          const chainedCommand = blockCommands.join(' && ');
           commands.push({
-            command: cmd.trim(),
-            comment: 'Run command'
+            command: chainedCommand,
+            comment: 'Execute command sequence'
           });
-        });
-      }
-    }
-    
-    // Extract inline commands (lines starting with $)
-    const lines = markdown.split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('$ ')) {
-        commands.push({
-          command: trimmed.substring(2),
-          comment: 'Run command'
-        });
+          break; // Only take the first block
+        }
       }
     }
     

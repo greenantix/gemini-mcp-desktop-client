@@ -2,8 +2,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 import { execSync } from "child_process";
 import os from "os";
+import { connectToMcpServers } from "./llmChat/getMcpTools";
 
-// System context gathering functions
+// Enhanced project context gathering with MCP integration
+async function getEnhancedProjectContext(preferredDistro?: string) {
+  try {
+    const baseContext = getSystemContext(preferredDistro);
+    
+    // Connect to MCP servers for enhanced context
+    const mcpTools = await connectToMcpServers(false);
+    
+    // Gather current project information
+    const projectContext = {
+      currentFiles: await getCurrentDirectoryFiles(mcpTools),
+      recentGitChanges: await getRecentGitActivity(),
+      projectStructure: await getProjectStructure(mcpTools),
+      packageInfo: await getPackageInfo(),
+      openFiles: await getRecentlyModifiedFiles(mcpTools)
+    };
+    
+    return {
+      ...baseContext,
+      project: projectContext,
+      mcpToolsAvailable: mcpTools ? mcpTools.mcpClients.size : 0
+    };
+  } catch (error) {
+    console.error("Failed to gather enhanced context:", error);
+    return getSystemContext(preferredDistro);
+  }
+}
+
+// System context gathering functions (basic)
 function getSystemContext(preferredDistro?: string) {
   try {
     const username = os.userInfo().username;
@@ -70,66 +99,276 @@ function getSystemContext(preferredDistro?: string) {
   }
 }
 
-// Linux Helper prompt template
-function createLinuxHelperPrompt(systemContext: any) {
-  return `You are a helpful Linux assistant for a user who is NEW TO LINUX (Pop!_OS).
-Your job is to analyze screenshots and provide beginner-friendly explanations with specific, accurate commands.
+// Helper functions for enhanced project context
+async function getCurrentDirectoryFiles(mcpTools: any) {
+  try {
+    if (mcpTools?.mcpClients) {
+      // Look for filesystem MCP client
+      for (const [serverKey, client] of mcpTools.mcpClients) {
+        try {
+          const result = await client.callTool({
+            name: "list_directory",
+            arguments: { path: process.cwd() }
+          });
+          if (result.content && Array.isArray(result.content)) {
+            return result.content.slice(0, 20);
+          }
+        } catch (toolError) {
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to get directory files:", error);
+  }
+  return [];
+}
 
-SYSTEM CONTEXT:
-- User: ${systemContext.username}@${systemContext.hostname}
-- OS: ${systemContext.distro}
-- Current Directory: ${systemContext.currentDir}
-${systemContext.git ? `- Git User: ${systemContext.git.user} (${systemContext.git.email})
-- Git Branch: ${systemContext.git.branch}
-- Git Status: ${systemContext.git.hasChanges ? "Has uncommitted changes" : "Clean"}` : "- Not in a git repository"}
+async function getRecentGitActivity() {
+  try {
+    const recentCommits = execSync("git log --oneline -5", { encoding: "utf-8" }).trim();
+    const currentBranch = execSync("git branch --show-current", { encoding: "utf-8" }).trim();
+    const modifiedFiles = execSync("git diff --name-only HEAD~1", { encoding: "utf-8" }).trim();
+    
+    return {
+      recentCommits: recentCommits.split('\n'),
+      currentBranch,
+      recentlyModified: modifiedFiles.split('\n').filter(f => f)
+    };
+  } catch (error) {
+    return null;
+  }
+}
 
-ANALYZE THIS SCREENSHOT and provide helpful suggestions:
+async function getProjectStructure(mcpTools: any) {
+  try {
+    if (mcpTools?.mcpClients) {
+      // Look for filesystem MCP client
+      for (const [serverKey, client] of mcpTools.mcpClients) {
+        try {
+          const result = await client.callTool({
+            name: "read_file",
+            arguments: { path: `${process.cwd()}/package.json` }
+          });
+          if (result.content) {
+            return {
+              type: 'nodejs',
+              config: JSON.parse(result.content)
+            };
+          }
+        } catch (toolError) {
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    // Try other project types
+    try {
+      if (fs.existsSync(`${process.cwd()}/Cargo.toml`)) {
+        return { type: 'rust' };
+      }
+      if (fs.existsSync(`${process.cwd()}/requirements.txt`)) {
+        return { type: 'python' };
+      }
+      if (fs.existsSync(`${process.cwd()}/Dockerfile`)) {
+        return { type: 'docker' };
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+  return { type: 'unknown' };
+}
+
+async function getPackageInfo() {
+  try {
+    const packagePath = `${process.cwd()}/package.json`;
+    if (fs.existsSync(packagePath)) {
+      const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+      return {
+        name: pkg.name,
+        version: pkg.version,
+        scripts: Object.keys(pkg.scripts || {}),
+        dependencies: Object.keys(pkg.dependencies || {}),
+        devDependencies: Object.keys(pkg.devDependencies || {})
+      };
+    }
+  } catch (error) {
+    // Ignore
+  }
+  return null;
+}
+
+async function getRecentlyModifiedFiles(mcpTools: any) {
+  try {
+    if (mcpTools?.mcpClients) {
+      // Look for filesystem MCP client
+      for (const [serverKey, client] of mcpTools.mcpClients) {
+        try {
+          const result = await client.callTool({
+            name: "list_directory", 
+            arguments: { path: process.cwd() }
+          });
+          if (result.content && Array.isArray(result.content)) {
+            return result.content.slice(0, 10);
+          }
+        } catch (toolError) {
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore
+  }
+  return [];
+}
+
+// Personal Coding Assistant prompt template
+function createPersonalAssistantPrompt(enhancedContext: any) {
+  const base = enhancedContext;
+  const project = enhancedContext.project || {};
+  
+  return `You are ${enhancedContext.username}'s Personal AI Coding Assistant - a deeply integrated AI that knows their entire development environment, coding patterns, and project history.
+
+═══════════════════════════════════════════════════════════════════
+🖥️  SYSTEM ENVIRONMENT
+═══════════════════════════════════════════════════════════════════
+Host: ${base.username}@${base.hostname}
+OS: ${base.distro} (Pop!_OS - Ubuntu-based, APT package manager)
+Shell: bash (assuming standard Pop!_OS setup)
+Current Directory: ${base.currentDir}
+Timestamp: ${base.timestamp}
+
+═══════════════════════════════════════════════════════════════════
+📂 CURRENT PROJECT ANALYSIS
+═══════════════════════════════════════════════════════════════════
+Project Name: ${project.packageInfo?.name || 'Unknown'}
+Version: ${project.packageInfo?.version || 'Unknown'}
+Type: ${project.projectStructure?.type || 'unknown'} project
+${project.packageInfo ? `
+📦 PACKAGE CONFIGURATION:
+- Scripts Available: ${project.packageInfo.scripts.join(', ')}
+- Runtime Dependencies: ${project.packageInfo.dependencies.join(', ')}
+- Dev Dependencies: ${project.packageInfo.devDependencies.join(', ')}
+- Total Dependencies: ${project.packageInfo.dependencies.length + project.packageInfo.devDependencies.length}
+
+🔧 PROJECT STRUCTURE DETECTED:
+${project.projectStructure?.type === 'nodejs' ? `
+  - Node.js/JavaScript project
+  - Package manager: npm (based on package.json presence)
+  - Likely using: React/Vue/Node.js based on dependencies
+  - Build system: Likely Vite/Webpack (check scripts)
+` : project.projectStructure?.type === 'rust' ? `
+  - Rust project (Cargo.toml detected)
+  - Package manager: Cargo
+  - Build system: Cargo
+` : project.projectStructure?.type === 'python' ? `
+  - Python project (requirements.txt detected)
+  - Package manager: pip/pipenv/poetry
+` : `
+  - Unknown project type
+  - No standard config files detected
+`}` : '- No package.json found - may be non-Node.js project'}
+
+═══════════════════════════════════════════════════════════════════
+🔧 GIT REPOSITORY STATE
+═══════════════════════════════════════════════════════════════════
+${base.git ? `
+Repository Status: Active Git repository
+Current Branch: ${base.git.branch}
+Working Tree: ${base.git.hasChanges ? "🔴 HAS UNCOMMITTED CHANGES" : "🟢 CLEAN"}
+
+📝 RECENT DEVELOPMENT ACTIVITY:
+${project.recentGitChanges ? `
+Last 5 Commits:
+${project.recentGitChanges.recentCommits?.map((commit, i) => `  ${i + 1}. ${commit}`).join('\n') || '  No recent commits'}
+
+Files Modified Since Last Commit:
+${project.recentGitChanges.recentlyModified?.map(file => `  - ${file}`).join('\n') || '  No recent modifications'}
+
+DEVELOPMENT PATTERN ANALYSIS:
+- Recent work focus: ${project.recentGitChanges.recentCommits?.[0]?.includes('fix') ? 'Bug fixes' : 
+                      project.recentGitChanges.recentCommits?.[0]?.includes('feat') ? 'Feature development' :
+                      project.recentGitChanges.recentCommands?.[0]?.includes('refactor') ? 'Code refactoring' : 'General development'}
+- Commit frequency: ${project.recentGitChanges.recentCommits?.length || 0} commits recently
+` : '- No recent git activity data available'}` : `
+Repository Status: ❌ NOT A GIT REPOSITORY
+- This directory is not version controlled
+- Consider: git init && git add . && git commit -m "Initial commit"
+`}
+
+═══════════════════════════════════════════════════════════════════
+🛠️ DEVELOPMENT TOOLS & CONTEXT
+═══════════════════════════════════════════════════════════════════
+MCP Filesystem Tools: ${base.mcpToolsAvailable || 0} tools available
+- Can read/write files directly
+- Can analyze project structure
+- Can access recent file modifications
+
+DEVELOPMENT ENVIRONMENT DETECTION:
+${project.packageInfo?.scripts.includes('dev') ? '✅ Development server available (npm run dev)' : '❌ No dev script detected'}
+${project.packageInfo?.scripts.includes('build') ? '✅ Build process available (npm run build)' : '❌ No build script detected'}
+${project.packageInfo?.scripts.includes('test') ? '✅ Testing setup available (npm run test)' : '❌ No test script detected'}
+${project.packageInfo?.scripts.includes('lint') ? '✅ Linting available (npm run lint)' : '❌ No lint script detected'}
+
+═══════════════════════════════════════════════════════════════════
+🎯 SCREENSHOT ANALYSIS CONTEXT
+═══════════════════════════════════════════════════════════════════
+You are analyzing a screenshot from ${base.username}'s development session.
+
+CONTEXT AWARENESS:
+- They are actively developing ${project.packageInfo?.name || 'a project'} 
+- Working in: ${base.currentDir}
+- Recent activity: ${project.recentGitChanges?.recentCommits?.[0] || 'Unknown'}
+- Project state: ${base.git?.hasChanges ? 'Has uncommitted work' : 'Clean state'}
+
+PERSONAL CODING ASSISTANT GOALS:
+1. 🔍 Analyze what they're showing you in the screenshot
+2. 🧠 Connect it to their current project and recent work
+3. ⚡ Provide smart, project-specific solutions
+4. 🔗 Chain commands intelligently for complete workflows
+5. 📚 Educate while solving their immediate problem
+6. 🛡️ Keep their development environment safe and organized
+
+Remember: You know their project intimately. Reference actual file names, dependencies, scripts, and recent changes when relevant.
 
 GUIDELINES:
-1. FIRST AND MOST IMPORTANT: Describe what you actually SEE in the screenshot
-2. If you see ERROR MESSAGES or RED TEXT, provide the exact fix command
-3. If you see specific text, code, or UI elements, mention them specifically
-4. Only suggest git/GitHub commands if you actually see git-related content in the screenshot
-5. Use ACTUAL usernames/paths from the context above (never use placeholders like {username})
-6. Explain what commands do (user is learning Linux)
-7. Be specific - use real file paths, not placeholders
-8. If nothing urgent visible, suggest 2-3 helpful next steps based on what's shown
-9. Prioritize safety - warn about dangerous commands
+1. FIRST: Describe what you SEE in the screenshot (errors, code, terminals, etc.)
+2. CODING FOCUS: If you see code errors, provide fix commands tailored to THIS project
+3. CONTEXT AWARE: Reference the specific project, dependencies, and recent changes shown above
+4. PERSONALIZED: Use their actual usernames, paths, project names from context
+5. COMMAND CHAINS: Provide complete solutions using && operators (like you've learned)
+6. PROJECT INTEGRATION: Consider how this fits their current development workflow
+7. MCP ENHANCED: You have filesystem access - reference actual files when relevant
+8. EDUCATIONAL: Explain commands briefly since they're learning
+9. SAFETY: Warn about dangerous operations but trust their development judgment
 
 RESPONSE FORMAT:
 ## 🔍 What I See
-[Brief description of what's in the screenshot]
+[Describe the screenshot: code, errors, terminals, IDE, etc.]
 
-## 💡 Suggested Commands
-For each command you suggest, format it EXACTLY like this (one command per code block):
-
-\`\`\`bash
-# Check available disk space
-df -h
-\`\`\`
+## 💻 Smart Solution
+Provide ONE intelligent command chain that solves the coding issue:
 
 \`\`\`bash
-# Install a missing package
-sudo apt install package-name
+# Fix the specific issue and continue development workflow
+npm run lint && npm run dev
 \`\`\`
 
-\`\`\`bash
-# Navigate to home directory
-cd ~
-\`\`\`
+## 🧠 Context Analysis  
+How this relates to their current ${enhancedContext.project?.packageInfo?.name || 'project'} development:
+- Reference their recent commits/changes
+- Connect to their project dependencies  
+- Suggest workflow improvements
 
-CRITICAL: 
-- Use ONLY \`\`\`bash (not \`\`\`sh or \`\`\`shell)
-- One command per code block
-- Always include a # comment above each command
-- Make comments descriptive and educational
+CRITICAL RULES:
+- ONE command chain in ONE \`\`\`bash block
+- Chain with && operators for complete solutions
+- Skip unnecessary navigation (they're in ${enhancedContext.currentDir})
+- Reference actual project files and context when relevant
+- Make solutions project-specific, not generic
 
-## 📚 Explanation
-[Educational notes about the commands and concepts]
-
-IMPORTANT: Always wrap commands in \`\`\`bash code blocks with descriptive comments. One command per block.
-
-Keep responses concise but educational. Focus on practical next steps.`;
+Keep responses focused on their actual development workflow and current project state.`;
 }
 
 // Initialize Gemini with vision capabilities for Linux Helper
@@ -153,7 +392,7 @@ export async function initializeLinuxHelperModel() {
   }
 }
 
-// Analyze screenshot with Linux Helper context
+// Analyze screenshot with Enhanced Personal Assistant context
 export async function analyzeScreenshotWithLinuxHelper(
   screenshotDataUrl: string,
   settings?: {
@@ -163,13 +402,15 @@ export async function analyzeScreenshotWithLinuxHelper(
 ): Promise<string> {
   try {
     const model = await initializeLinuxHelperModel();
-    const systemContext = getSystemContext(settings?.linuxDistro);
     
-    if (!systemContext) {
+    // Use enhanced context with MCP integration
+    const enhancedContext = await getEnhancedProjectContext(settings?.linuxDistro);
+    
+    if (!enhancedContext) {
       throw new Error("Failed to gather system context");
     }
     
-    const prompt = createLinuxHelperPrompt(systemContext);
+    const prompt = createPersonalAssistantPrompt(enhancedContext);
     
     // Convert data URL to the format Gemini expects
     const base64Data = screenshotDataUrl.split(",")[1];

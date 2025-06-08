@@ -180,7 +180,7 @@ export default function ChatHeader({
           </Tooltip>
 
           <Tooltip title="Settings">
-            <IconButton color="inherit" onClick={() => navigate('/server-config')}>
+            <IconButton color="inherit" onClick={() => navigate('/settings')}>
               <SettingsIcon />
             </IconButton>
           </Tooltip>

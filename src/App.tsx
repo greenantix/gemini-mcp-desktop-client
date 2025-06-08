@@ -1,7 +1,6 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import ChatPage from './screens/Chat/ChatPage';
-import McpSettingsPage from './screens/McpSettingsPage/McpSettingsPage';
-import ServerConfiguration from './screens/ServerConfiguration/ServerConfiguration';
+import SettingsPage from './screens/Settings/SettingsPage';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { AppThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ToastContainer } from 'react-toastify';
@@ -28,8 +27,10 @@ function AppContent() {
       <Router>
         <Routes>
           <Route path="/" element={<ChatPage />} />
-          <Route path="/mcp-settings" element={<McpSettingsPage />} />
-          <Route path="/server-config" element={<ServerConfiguration />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          {/* Legacy routes for backward compatibility - redirect to unified settings */}
+          <Route path="/mcp-settings" element={<SettingsPage />} />
+          <Route path="/server-config" element={<SettingsPage />} />
         </Routes>
       </Router>
     </ThemeProvider>

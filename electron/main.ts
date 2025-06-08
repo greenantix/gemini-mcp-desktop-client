@@ -9,10 +9,10 @@ import {
   dialog,
   desktopCapturer,
   session,
-  globalShortcut,
 } from "electron";
 import * as fs from "fs";
 import * as os from "os";
+import * as net from "net";
 // import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -44,6 +44,9 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow;
+let popupWin: BrowserWindow | null = null;
+let daemonSocketServer: net.Server | null = null;
+let connectedDaemonSockets: Set<net.Socket> = new Set();
 
 // Linux Helper Tool State
 interface LinuxHelperState {
@@ -57,6 +60,11 @@ const helperState: LinuxHelperState = {
   lastScreenshot: null,
   lastSuggestions: null,
 };
+
+interface HotkeyPressPayload {
+  screenshotDataUrl: string;
+  cursorPosition: { x: number; y: number };
+}
 
 // Screenshot save directory setup
 function ensureScreenshotDirectory(): string {
@@ -134,45 +142,61 @@ async function captureActiveMonitorScreenshot(): Promise<{dataUrl: string, filen
   }
 }
 
-// Linux Helper hotkey handler
-async function handleLinuxHelperHotkey() {
-  if (!helperState.isWaitingForSecondHotkey) {
-    // First hotkey press - capture and analyze
-    console.log("🔥 Linux Helper activated - capturing screenshot...");
-    
-    const screenshotData = await captureActiveMonitorScreenshot();
-    if (screenshotData) {
-      helperState.lastScreenshot = screenshotData.dataUrl;
-      
-      // Send screenshot with metadata to chat for analysis
-      win.webContents.send("linux-helper-screenshot", {
-        screenshot: screenshotData.dataUrl,
-        filename: screenshotData.filename,
-        filepath: screenshotData.filepath,
-        size: screenshotData.size,
-        action: "analyze"
-      });
-      
-      helperState.isWaitingForSecondHotkey = true;
-      
-      // Auto-reset after 30 seconds if no second hotkey
-      setTimeout(() => {
-        if (helperState.isWaitingForSecondHotkey) {
-          helperState.isWaitingForSecondHotkey = false;
-          console.log("🕐 Linux Helper timeout - resetting state");
-        }
-      }, 30000);
-    }
-  } else {
-    // Second hotkey press - execute suggestions
-    console.log("⚡ Linux Helper executing suggestions...");
-    
-    win.webContents.send("linux-helper-execute", {
-      action: "execute"
-    });
-    
-    helperState.isWaitingForSecondHotkey = false;
+// Create popup window at cursor position
+function createPopupWindow(cursorPosition: { x: number; y: number }): BrowserWindow {
+  // Close existing popup if it exists
+  if (popupWin && !popupWin.isDestroyed()) {
+    popupWin.close();
   }
+
+  popupWin = new BrowserWindow({
+    width: 400,
+    height: 300,
+    x: cursorPosition.x + 10,
+    y: cursorPosition.y + 10,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.mjs"),
+    },
+  });
+
+  // Load popup HTML
+  const popupPath = path.join(__dirname, "..", "src", "linux-helper-popup", "popup.html");
+  popupWin.loadFile(popupPath);
+
+  // Auto-close popup after 30 seconds
+  setTimeout(() => {
+    if (popupWin && !popupWin.isDestroyed()) {
+      popupWin.close();
+      popupWin = null;
+    }
+  }, 30000);
+
+  return popupWin;
+}
+
+// Linux Helper hotkey handler (called from daemon via socket)
+function handleLinuxHelperHotkey(payload: HotkeyPressPayload) {
+  console.log("🔥 Linux Helper activated via daemon");
+  
+  // Action A: Create popup at cursor position
+  const popup = createPopupWindow(payload.cursorPosition);
+  
+  // Send screenshot to popup for quick actions
+  popup.webContents.once('did-finish-load', () => {
+    popup.webContents.send('display-screenshot', payload.screenshotDataUrl);
+  });
+  
+  // Action B: Send to main chat window for analysis
+  win.webContents.send('analyze-screenshot', payload.screenshotDataUrl);
+  
+  console.log(`📍 Popup created at position: ${payload.cursorPosition.x}, ${payload.cursorPosition.y}`);
 }
 
 async function checkAndRequestMicrophonePermission(): Promise<boolean> {
@@ -260,22 +284,97 @@ function createWindow() {
   win.webContents.openDevTools();
 }
 
+// Setup socket server for daemon communication
+function setupDaemonSocketServer(): void {
+  const socketPath = '/tmp/linux-helper.sock';
+  
+  // Remove existing socket file if it exists
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
+  }
+  
+  daemonSocketServer = net.createServer((socket) => {
+    console.log('🔌 Daemon connected via socket');
+    
+    // Add socket to our tracking set
+    connectedDaemonSockets.add(socket);
+    
+    socket.on('data', (data) => {
+      try {
+        const messages = data.toString().split('\n').filter(msg => msg.trim());
+        
+        for (const message of messages) {
+          const { event, data: eventData } = JSON.parse(message);
+          
+          if (event === 'hotkey-pressed') {
+            handleLinuxHelperHotkey(eventData as HotkeyPressPayload);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing daemon message:', error);
+      }
+    });
+    
+    socket.on('error', (error) => {
+      console.error('Daemon socket error:', error);
+      // Remove from tracking set on error
+      connectedDaemonSockets.delete(socket);
+    });
+    
+    socket.on('close', () => {
+      console.log('🔌 Daemon disconnected');
+      // Remove from tracking set when disconnected
+      connectedDaemonSockets.delete(socket);
+    });
+  });
+  
+  daemonSocketServer.listen(socketPath, () => {
+    console.log(`🚀 Daemon socket server listening at ${socketPath}`);
+  });
+  
+  daemonSocketServer.on('error', (error) => {
+    console.error('Socket server error:', error);
+  });
+}
+
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    // Unregister all global shortcuts before quitting
-    globalShortcut.unregisterAll();
+    // Clean up socket connections and server
+    cleanupSocketConnections();
     app.quit();
     // win = null;
   }
 });
 
 app.on("will-quit", () => {
-  // Unregister all global shortcuts
-  globalShortcut.unregisterAll();
+  // Clean up socket connections and server
+  cleanupSocketConnections();
 });
+
+function cleanupSocketConnections(): void {
+  // Close all daemon socket connections
+  connectedDaemonSockets.forEach((socket) => {
+    if (!socket.destroyed) {
+      socket.end();
+    }
+  });
+  connectedDaemonSockets.clear();
+  
+  // Close socket server
+  if (daemonSocketServer) {
+    daemonSocketServer.close();
+    daemonSocketServer = null;
+  }
+  
+  // Remove socket file
+  const socketPath = '/tmp/linux-helper.sock';
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
+  }
+}
 
 app.on("activate", () => {
   // On OS X it's common to re-create a window in the app when the
@@ -295,30 +394,13 @@ app.whenReady().then(async () => {
     { useSystemPicker: true }
   );
   
-  // Load settings and register hotkey
+  // Load settings
   loadSettings();
   
-  // Register Linux Helper global shortcuts using settings
-  // Only register keyboard shortcuts, mouse buttons are handled by the daemon
-  if (currentSettings.hotkey !== 'ForwardButton') {
-    const hotkeyRegistered = globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
-    if (hotkeyRegistered) {
-      console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) registered successfully`);
-    } else {
-      console.log(`❌ Failed to register Linux Helper hotkey (${currentSettings.hotkey})`);
-    }
-  } else {
-    console.log(`🚀 Linux Helper ForwardButton hotkey handled by daemon`);
-  }
+  // Setup daemon socket server
+  setupDaemonSocketServer();
   
-  // ESC key to dismiss/reset state
-  globalShortcut.register('Escape', () => {
-    if (helperState.isWaitingForSecondHotkey) {
-      helperState.isWaitingForSecondHotkey = false;
-      console.log('🚫 Linux Helper dismissed');
-      win.webContents.send("linux-helper-dismissed");
-    }
-  });
+  console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) handled by daemon`);
   
   await checkAndRequestMicrophonePermission();
   startServer();
@@ -409,9 +491,18 @@ ipcMain.handle("linux-helper-get-system-context", async () => {
 });
 
 // Handle manual Linux Helper trigger from UI button
-ipcMain.on("manual-linux-helper-trigger", () => {
+ipcMain.on("manual-linux-helper-trigger", async () => {
   console.log("📱 Manual Linux Helper trigger received");
-  handleLinuxHelperHotkey();
+  
+  // Simulate daemon hotkey press
+  const screenshotData = await captureActiveMonitorScreenshot();
+  if (screenshotData) {
+    const payload: HotkeyPressPayload = {
+      screenshotDataUrl: screenshotData.dataUrl,
+      cursorPosition: { x: 100, y: 100 } // Default position for manual trigger
+    };
+    handleLinuxHelperHotkey(payload);
+  }
 });
 
 // Settings management
@@ -470,29 +561,36 @@ function saveSettingsToFile(settings: AppSettings): void {
 
 function updateHotkey(newHotkey: string): boolean {
   try {
-    // Unregister current hotkey if it's not ForwardButton
-    if (currentSettings.hotkey !== 'ForwardButton') {
-      globalShortcut.unregister(currentSettings.hotkey);
-    }
+    console.log(`🔄 Hotkey updated to: ${newHotkey} (handled by daemon)`);
     
-    // Register new hotkey only if it's not ForwardButton (daemon handles mouse buttons)
-    if (newHotkey !== 'ForwardButton') {
-      const registered = globalShortcut.register(newHotkey, handleLinuxHelperHotkey);
-      if (registered) {
-        console.log(`🔄 Hotkey updated to: ${newHotkey}`);
-        return true;
-      } else {
-        console.error(`❌ Failed to register new hotkey: ${newHotkey}`);
-        // Re-register old hotkey if it wasn't ForwardButton
-        if (currentSettings.hotkey !== 'ForwardButton') {
-          globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
+    // Send hotkey update to all connected daemon instances
+    if (connectedDaemonSockets.size > 0) {
+      const updateMessage = JSON.stringify({
+        event: 'update-hotkey',
+        data: { hotkey: newHotkey }
+      }) + '\n';
+      
+      let sentCount = 0;
+      connectedDaemonSockets.forEach((socket) => {
+        if (socket.writable && !socket.destroyed) {
+          socket.write(updateMessage);
+          sentCount++;
+        } else {
+          // Clean up dead sockets
+          connectedDaemonSockets.delete(socket);
         }
-        return false;
+      });
+      
+      if (sentCount > 0) {
+        console.log(`🔄 Sent hotkey update to ${sentCount} daemon instance(s): ${newHotkey}`);
+      } else {
+        console.warn('⚠️ No active daemon connections to receive hotkey update');
       }
     } else {
-      console.log(`🔄 Hotkey updated to: ForwardButton (handled by daemon)`);
-      return true;
+      console.warn('⚠️ No daemon connected to receive hotkey update');
     }
+    
+    return true;
   } catch (error) {
     console.error('Error updating hotkey:', error);
     return false;

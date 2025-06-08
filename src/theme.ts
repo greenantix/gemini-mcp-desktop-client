@@ -1,36 +1,58 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 import { deepPurple, grey, orange } from '@mui/material/colors';
 
-// Pop OS / Papirus Dark Theme Colors
-const primaryColor = '#ffa726'; // Pop OS orange accent
-const secondaryColor = '#48b9c7'; // Teal accent
-const backgroundColor = '#2d2d2d'; // Dark background like Pop OS
-const paperColor = '#3c3c3c'; // Slightly lighter for cards/papers
-const surfaceColor = '#424242'; // For elevated surfaces
+// Official Pop!_OS Dark Theme Colors
+const primaryColor = '#FAA41A'; // Official Pop!_OS orange (light theme variant)
+const primaryDarkColor = '#CC7900'; // Official Pop!_OS orange (dark theme variant)
+const secondaryColor = '#48B9C7'; // Official Pop!_OS teal
+const secondaryDarkColor = '#0A97A5'; // Official Pop!_OS teal (dark theme variant)
+const accentGreen = '#73C48F'; // Pop!_OS suggestion/success color
+const destructionColor = '#F15D22'; // Pop!_OS destruction/error color
+
+// Pop!_OS System Colors
+const backgroundColor = '#333130'; // Pop!_OS dark charcoal background
+const paperColor = '#3D3D3D'; // Slightly lighter for cards/papers
+const surfaceColor = '#4A4A4A'; // For elevated surfaces
+const borderColor = '#5A5A5A'; // For subtle borders
+const textPrimary = '#F6F6F6'; // Off-white text
+const textSecondary = '#C0C0C0'; // Secondary text
+
 const userBubbleColor = primaryColor;
-const modelBubbleColor = '#4a4a4a'; // Dark grey for AI responses
+const modelBubbleColor = '#484848'; // Neutral dark grey for AI responses
 
 let theme = createTheme({
   palette: {
     mode: 'dark', // Enable dark mode
     primary: {
-      main: primaryColor,
-      contrastText: '#ffffff',
+      main: primaryColor, // Bright Pop!_OS orange
+      dark: primaryDarkColor, // Darker orange for active states
+      light: '#FFB13D', // Lighter orange for hover states
+      contrastText: '#000000', // Black text on orange backgrounds
     },
     secondary: {
-      main: secondaryColor,
+      main: secondaryColor, // Pop!_OS teal
+      dark: secondaryDarkColor, // Darker teal for active states
+      light: '#6BC5D0', // Lighter teal for hover states
+      contrastText: '#000000', // Black text on teal backgrounds
+    },
+    success: {
+      main: accentGreen, // Pop!_OS suggestion green
+      contrastText: '#000000',
+    },
+    error: {
+      main: destructionColor, // Pop!_OS destruction red
       contrastText: '#ffffff',
     },
     background: {
-      default: backgroundColor,
-      paper: paperColor,
+      default: backgroundColor, // Dark charcoal
+      paper: paperColor, // Cards and surfaces
     },
     surface: {
       main: surfaceColor,
     },
     text: {
-      primary: '#ffffff', // White text for dark theme
-      secondary: '#b0b0b0', // Light grey for secondary text
+      primary: textPrimary, // Off-white
+      secondary: textSecondary, // Light grey
     },
     // Custom colors for chat bubbles
     userBubble: {
@@ -39,20 +61,47 @@ let theme = createTheme({
     },
     modelBubble: {
       main: modelBubbleColor,
-      contrastText: '#ffffff', // White text on dark grey
+      contrastText: textPrimary, // Off-white text on dark grey
     },
     // Define divider color for dark theme
-    divider: '#555555',
+    divider: borderColor,
+    action: {
+      hover: 'rgba(250, 164, 26, 0.08)', // Subtle orange hover
+      selected: 'rgba(250, 164, 26, 0.12)', // Orange selection
+      disabled: 'rgba(255, 255, 255, 0.26)',
+      disabledBackground: 'rgba(255, 255, 255, 0.12)',
+    },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', // Or choose another font
+    fontFamily: '"Fira Sans", "Roboto", "Ubuntu", "Helvetica", "Arial", sans-serif', // Pop!_OS uses Fira Sans
+    h1: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h2: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h3: {
+      fontWeight: 600,
+      letterSpacing: '-0.01em',
+    },
+    h4: {
+      fontWeight: 600,
+    },
+    h5: {
+      fontWeight: 600,
+    },
     h6: {
       fontWeight: 600,
     },
-    // Add more customizations as needed
+    button: {
+      fontWeight: 500,
+      letterSpacing: '0.02em',
+    },
   },
   shape: {
-    borderRadius: 8, // Slightly more rounded corners globally
+    borderRadius: 6, // Pop!_OS style rounded corners
   },
   components: {
     MuiPaper: {
@@ -63,50 +112,101 @@ let theme = createTheme({
       },
     },
     MuiButton: {
-        styleOverrides: {
-            root: {
-                textTransform: 'none', // Keep button text casing as is
-                borderRadius: '18px', // Pill-shaped buttons
-                padding: '8px 16px',
-            },
-            containedPrimary: {
-                boxShadow: '0 4px 12px -4px rgba(102, 18, 247, 0.4)', // Subtle shadow for primary buttons
-                '&:hover': {
-                    boxShadow: '0 6px 16px -6px rgba(102, 18, 247, 0.6)',
-                }
-            }
-        }
+      styleOverrides: {
+        root: {
+          textTransform: 'none', // Keep button text casing as is
+          borderRadius: '6px', // Pop!_OS style borders
+          padding: '8px 16px',
+          fontWeight: 500,
+        },
+        containedPrimary: {
+          backgroundColor: primaryColor,
+          color: '#000000', // Black text on orange
+          boxShadow: '0 2px 8px rgba(250, 164, 26, 0.3)', // Orange shadow
+          '&:hover': {
+            backgroundColor: primaryDarkColor,
+            boxShadow: '0 4px 12px rgba(250, 164, 26, 0.4)',
+          },
+          '&:active': {
+            backgroundColor: '#B8880E',
+          },
+        },
+        outlined: {
+          borderColor: primaryColor,
+          color: primaryColor,
+          '&:hover': {
+            borderColor: primaryDarkColor,
+            backgroundColor: 'rgba(250, 164, 26, 0.08)',
+          },
+        },
+      },
     },
     MuiTextField: {
-        styleOverrides: {
-            root: {
-                '& .MuiOutlinedInput-root': {
-                     borderRadius: '12px', // Rounded input fields
-                    //  backgroundColor: paperColor, // Ensure background contrasts if needed
-                     '& fieldset': {
-                        // borderColor: grey[300], // Subtle border
-                     },
-                    '&:hover fieldset': {
-                        // borderColor: primaryColor, // Border color on hover
-                    },
-                    '&.Mui-focused fieldset': {
-                        // borderColor: primaryColor, // Border color when focused
-                        // borderWidth: '1px',
-                    },
-                },
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '6px', // Pop!_OS style borders
+            backgroundColor: paperColor,
+            '& fieldset': {
+              borderColor: borderColor,
             },
+            '&:hover fieldset': {
+              borderColor: primaryColor,
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: primaryColor,
+              borderWidth: '2px',
+            },
+          },
         },
+      },
     },
-     MuiAppBar: {
-        styleOverrides: {
-            root: {
-                 backgroundColor: paperColor, // Dark paper color for AppBar
-                 color: '#ffffff', // White text on dark AppBar
-                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)', // Darker shadow for dark theme
-                 borderBottom: `1px solid #555555`, // Subtle border
-            }
-        }
-     }
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: paperColor,
+          color: textPrimary,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+          borderBottom: `1px solid ${borderColor}`,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: paperColor,
+          backgroundImage: 'none', // Remove MUI default gradient
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: paperColor,
+          borderRadius: '8px',
+          border: `1px solid ${borderColor}`,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 500,
+          '&.Mui-selected': {
+            color: primaryColor,
+          },
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        indicator: {
+          backgroundColor: primaryColor,
+          height: '3px',
+        },
+      },
+    },
   },
 });
 
@@ -126,6 +226,22 @@ declare module '@mui/material/styles' {
     surface?: PaletteOptions['primary'];
   }
 }
+
+// Export color constants for use in other components
+export const popOSColors = {
+  primaryOrange: primaryColor,
+  primaryOrangeDark: primaryDarkColor,
+  secondaryTeal: secondaryColor,
+  secondaryTealDark: secondaryDarkColor,
+  accentGreen,
+  destructionRed: destructionColor,
+  backgroundCharcoal: backgroundColor,
+  paperGrey: paperColor,
+  surfaceGrey: surfaceColor,
+  borderGrey: borderColor,
+  textPrimary,
+  textSecondary,
+};
 
 
 export default theme;

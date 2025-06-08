@@ -139,7 +139,7 @@ const ServerConfiguration: React.FC = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background.default",
         p: 2,
       }}
     >

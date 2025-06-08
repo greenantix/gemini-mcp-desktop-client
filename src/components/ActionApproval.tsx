@@ -10,7 +10,8 @@ import {
   ListItemText, 
   ListItemSecondaryAction,
   IconButton,
-  Divider
+  Divider,
+  useTheme
 } from '@mui/material';
 import { 
   CheckCircle as ApproveIcon, 
@@ -45,6 +46,8 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
   onApproveAll,
   onDenyAll 
 }) => {
+  const theme = useTheme();
+  
   if (actions.length === 0) {
     return null;
   }
@@ -79,9 +82,9 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
   };
 
   return (
-    <Paper sx={{ p: 2, mt: 2, backgroundColor: '#1e1e1e', border: '1px solid #3a3a3a' }}>
+    <Paper sx={{ p: 2, mt: 2, backgroundColor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h6" sx={{ color: '#ff6b35' }}>
+        <Typography variant="h6" sx={{ color: 'primary.main' }}>
           🛠️ Proposed Actions ({actions.length})
         </Typography>
         <Box>
@@ -110,9 +113,9 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
           <React.Fragment key={index}>
             <ListItem
               sx={{
-                backgroundColor: action.safety === 'dangerous' ? 'rgba(244, 67, 54, 0.1)' : 
-                                action.safety === 'requires_approval' ? 'rgba(255, 152, 0, 0.1)' : 
-                                'rgba(76, 175, 80, 0.1)',
+                backgroundColor: action.safety === 'dangerous' ? theme.palette.action.hover : 
+                                action.safety === 'requires_approval' ? 'rgba(250, 164, 26, 0.1)' : 
+                                'rgba(115, 196, 143, 0.1)',
                 borderRadius: 1,
                 mb: 1
               }}
@@ -123,14 +126,14 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                     <Typography variant="body2" component="span">
                       {getActionIcon(action.type)}
                     </Typography>
-                    <Typography variant="body1" component="span" sx={{ color: '#ffffff' }}>
+                    <Typography variant="body1" component="span" sx={{ color: 'text.primary' }}>
                       {action.description}
                     </Typography>
                     <Chip
                       label={action.type}
                       size="small"
                       variant="outlined"
-                      sx={{ color: '#cccccc', borderColor: '#666666' }}
+                      sx={{ color: 'text.secondary', borderColor: theme.palette.divider }}
                     />
                     <Chip
                       label={`${getSafetyIcon(action.safety)} ${action.safety}`}
@@ -141,7 +144,7 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                 }
                 secondary={
                   action.target && (
-                    <Typography variant="body2" sx={{ color: '#bbbbbb', mt: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
                       Target: {action.target}
                     </Typography>
                   )
@@ -151,7 +154,7 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                 <IconButton
                   edge="end"
                   onClick={() => onPreview(index)}
-                  sx={{ color: '#00bcd4', mr: 1 }}
+                  sx={{ color: 'secondary.main', mr: 1 }}
                   title="Preview"
                 >
                   <PreviewIcon />
@@ -159,7 +162,7 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                 <IconButton
                   edge="end"
                   onClick={() => onApprove(index)}
-                  sx={{ color: '#4caf50', mr: 1 }}
+                  sx={{ color: 'success.main', mr: 1 }}
                   title="Approve"
                 >
                   <ApproveIcon />
@@ -167,20 +170,20 @@ const ActionApproval: React.FC<ActionApprovalProps> = ({
                 <IconButton
                   edge="end"
                   onClick={() => onDeny(index)}
-                  sx={{ color: '#f44336' }}
+                  sx={{ color: 'error.main' }}
                   title="Deny"
                 >
                   <DenyIcon />
                 </IconButton>
               </ListItemSecondaryAction>
             </ListItem>
-            {index < actions.length - 1 && <Divider sx={{ backgroundColor: '#3a3a3a' }} />}
+            {index < actions.length - 1 && <Divider sx={{ backgroundColor: theme.palette.divider }} />}
           </React.Fragment>
         ))}
       </List>
 
-      <Box mt={2} p={1} sx={{ backgroundColor: 'rgba(255, 107, 53, 0.1)', borderRadius: 1 }}>
-        <Typography variant="body2" sx={{ color: '#ff6b35' }}>
+      <Box mt={2} p={1} sx={{ backgroundColor: 'rgba(250, 164, 26, 0.1)', borderRadius: 1 }}>
+        <Typography variant="body2" sx={{ color: 'primary.main' }}>
           💡 <strong>Smart Actions</strong> will be executed in sequence. Actions marked as "requires_approval" or "dangerous" need your explicit approval.
         </Typography>
       </Box>

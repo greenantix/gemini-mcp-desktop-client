@@ -1,28 +1,108 @@
+# Dependency directories
+node_modules/
+/.pnp
+.pnp.js
+
+# Build outputs
+/dist/
+/dist-electron/
+/dist-ssr/
+/out/
+/build/
+/.next/
+/.nuxt/
+/.out/
+/.output/
+
+# Environment and config files
+.env
+.env.*
+!.env.example
+.envTMP
+*.local
+src/backend/configurations/mcpServicesConfig.json
+src/backend/configurations/serverConfig.json
+
+# Lock files (uncomment if you want to track these)
+package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
 # Logs
 logs
 *.log
-src/backend/configurations/mcpServicesConfig.json
-src/backend/configurations/serverConfig.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-dist-electron
-.env
-node_modules
-dist
-dist-ssr
-*.local
-package-lock.json
+app_log.txt
+*.local.md
+*.log
+gemini-*.log
+invalid-model-to-cause-error.log
+
+# Testing
+/coverage/
+/.nyc_output/
+/cypress/videos/
+/cypress/screenshots/
+/test-results/
+/playwright-report/
+
+# Cache directories
+.npm/
+.eslintcache
+.stylelintcache
+.prettiercache
+.cache/
+.parcel-cache/
+.rts2_cache*/
+.rpt2_cache*/
+.rollup.cache/
+.webpack/
+.vite/
+/.sass-cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.envTMP
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Electron specific
+electron-builder.yaml
+electron-builder.yml
+/dist_electron/
+/release/
+
+# TypeScript specific
+*.tsbuildinfo
+.tscache/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
+tmp/
+
+# Debug files
+debug-*.sh
+test-*.sh
+
+# Generated files
+/generated/

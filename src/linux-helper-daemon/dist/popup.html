@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linux Helper</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+      background: transparent;
+      overflow: hidden;
+      -webkit-app-region: no-drag;
+      user-select: none;
+      cursor: default;
+    }
+
+    /* Main popup container */
+    .popup-container {
+      width: 350px;
+      min-height: 200px;
+      background: #2d2d2d;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      border: 1px solid #444;
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.4;
+      overflow: hidden;
+      position: relative;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Header */
+    .popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #3a3a3a, #2d2d2d);
+      border-bottom: 1px solid #444;
+      -webkit-app-region: drag;
+    }
+
+    .popup-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .close-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ff5f57;
+      border: none;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: no-drag;
+      transition: background-color 0.2s;
+    }
+
+    .close-btn:hover {
+      background: #ff3b30;
+    }
+
+    /* Content area */
+    .popup-content {
+      padding: 16px;
+    }
+
+    /* Loading state */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .progress-container {
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #444;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #81C784);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Analysis results */
+    .analysis-result {
+      margin-bottom: 16px;
+    }
+
+    .result-icon {
+      font-size: 18px;
+      margin-right: 8px;
+    }
+
+    .result-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .result-content {
+      color: #ccc;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* Quick fix section */
+    .quick-fix {
+      background: #363636;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .quick-fix-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .command-box {
+      background: #1e1e1e;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      color: #4CAF50;
+      margin-bottom: 12px;
+      word-break: break-all;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .command-box:hover {
+      background: #252525;
+      border-color: #666;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-primary {
+      background: #007AFF;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0056CC;
+    }
+
+    .btn-secondary {
+      background: #444;
+      color: #ccc;
+    }
+
+    .btn-secondary:hover {
+      background: #555;
+      color: white;
+    }
+
+    .btn-success {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #45a049;
+    }
+
+    .pin-btn {
+      position: absolute;
+      top: 12px;
+      right: 40px;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: transparent;
+      border: 1px solid #666;
+      color: #ccc;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: no-drag;
+      transition: all 0.2s;
+    }
+
+    .pin-btn:hover {
+      background: #444;
+      color: white;
+    }
+
+    .pin-btn.pinned {
+      background: #007AFF;
+      color: white;
+      border-color: #007AFF;
+    }
+
+    /* Error state */
+    .error-container {
+      padding: 16px;
+      color: #ff6b6b;
+      text-align: center;
+    }
+
+    .error-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    /* Suggestions list */
+    .suggestions-list {
+      margin-top: 8px;
+    }
+
+    .suggestion-item {
+      background: #363636;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .suggestion-item:hover {
+      background: #404040;
+      border-color: #555;
+    }
+
+    .suggestion-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .suggestion-desc {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .suggestion-command {
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 11px;
+      color: #4CAF50;
+      margin-top: 6px;
+      background: #1e1e1e;
+      padding: 4px 6px;
+      border-radius: 3px;
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 200ms ease-out;
+    }
+
+    .fade-out {
+      animation: fadeOut 150ms ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    }
+
+    /* Hidden state */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-container fade-in" id="popup">
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="popup-title">
+        <span>🤖</span>
+        <span id="popup-title-text">Linux Helper</span>
+      </div>
+      <button class="pin-btn" id="pin-btn" title="Pin popup">📌</button>
+      <button class="close-btn" id="close-btn" title="Close">✕</button>
+    </div>
+
+    <!-- Content -->
+    <div class="popup-content" id="popup-content">
+      <!-- Loading state (default) -->
+      <div class="loading-container" id="loading-state">
+        <div class="progress-container">
+          <div class="progress-label">📸 Analyzing screenshot...</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success state (hidden by default) -->
+      <div class="analysis-result hidden" id="success-state">
+        <div class="result-title">
+          <span class="result-icon">💡</span>
+          <span id="result-title-text">Analysis Complete</span>
+        </div>
+        <div class="result-content" id="result-content">
+          Found issues in your code that need attention.
+        </div>
+
+        <!-- Quick fix section -->
+        <div class="quick-fix">
+          <div class="quick-fix-title">
+            📋 Quick Fix:
+          </div>
+          <div class="command-box" id="primary-command" onclick="copyCommand(this)">
+            npm run lint:fix && npm test
+          </div>
+          <div class="action-buttons">
+            <button class="action-btn btn-success" onclick="executeCommand()">Execute</button>
+            <button class="action-btn btn-primary" onclick="copyCommand()">Copy</button>
+            <button class="action-btn btn-secondary" onclick="showDetails()">Details</button>
+          </div>
+        </div>
+
+        <!-- Additional suggestions -->
+        <div class="suggestions-list" id="suggestions-list">
+          <!-- Dynamic suggestions will be added here -->
+        </div>
+      </div>
+
+      <!-- Error state (hidden by default) -->
+      <div class="error-container hidden" id="error-state">
+        <div class="error-icon">⚠️</div>
+        <div id="error-message">Analysis failed</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    let currentState = { status: 'loading', isPinned: false };
+    let progressInterval = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      loadCurrentState();
+      startProgressAnimation();
+    });
+
+    function setupEventListeners() {
+      // Close button
+      document.getElementById('close-btn').addEventListener('click', () => {
+        ipcRenderer.invoke('close-popup');
+      });
+
+      // Pin button
+      document.getElementById('pin-btn').addEventListener('click', async () => {
+        const isPinned = await ipcRenderer.invoke('pin-popup');
+        updatePinButton(isPinned);
+      });
+
+      // Listen for state updates from main process
+      ipcRenderer.on('update-state', (_, state) => {
+        updateUI(state);
+      });
+
+      // ESC key handling
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          ipcRenderer.invoke('close-popup');
+        }
+      });
+    }
+
+    async function loadCurrentState() {
+      currentState = await ipcRenderer.invoke('get-current-state');
+      updateUI(currentState);
+    }
+
+    function updateUI(state) {
+      currentState = { ...currentState, ...state };
+      
+      // Hide all states first
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('success-state').classList.add('hidden');
+      document.getElementById('error-state').classList.add('hidden');
+
+      // Update title
+      if (state.title) {
+        document.getElementById('popup-title-text').textContent = state.title;
+      }
+
+      // Show appropriate state
+      switch (state.status) {
+        case 'loading':
+          document.getElementById('loading-state').classList.remove('hidden');
+          if (state.progress !== undefined) {
+            updateProgress(state.progress);
+          }
+          break;
+
+        case 'success':
+          stopProgressAnimation();
+          document.getElementById('success-state').classList.remove('hidden');
+          updateSuccessContent(state);
+          break;
+
+        case 'error':
+          stopProgressAnimation();
+          document.getElementById('error-state').classList.remove('hidden');
+          if (state.error) {
+            document.getElementById('error-message').textContent = state.error;
+          }
+          break;
+      }
+
+      // Update pin state
+      updatePinButton(state.isPinned);
+    }
+
+    function updateSuccessContent(state) {
+      if (state.content) {
+        document.getElementById('result-content').textContent = state.content;
+      }
+
+      if (state.suggestions && state.suggestions.length > 0) {
+        const primarySuggestion = state.suggestions[0];
+        document.getElementById('primary-command').textContent = primarySuggestion.command;
+        
+        // Update suggestions list
+        const suggestionsList = document.getElementById('suggestions-list');
+        suggestionsList.innerHTML = '';
+        
+        if (state.suggestions.length > 1) {
+          state.suggestions.slice(1).forEach((suggestion, index) => {
+            const item = createSuggestionItem(suggestion, index + 1);
+            suggestionsList.appendChild(item);
+          });
+        }
+      }
+    }
+
+    function createSuggestionItem(suggestion, index) {
+      const item = document.createElement('div');
+      item.className = 'suggestion-item';
+      item.onclick = () => executeSpecificCommand(suggestion.command);
+      
+      item.innerHTML = `
+        <div class="suggestion-title">${suggestion.title}</div>
+        <div class="suggestion-desc">${suggestion.description}</div>
+        <div class="suggestion-command">${suggestion.command}</div>
+      `;
+      
+      return item;
+    }
+
+    function startProgressAnimation() {
+      let progress = 0;
+      progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 95) progress = 95;
+        updateProgress(progress);
+      }, 300);
+    }
+
+    function stopProgressAnimation() {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      updateProgress(100);
+    }
+
+    function updateProgress(percent) {
+      const fill = document.getElementById('progress-fill');
+      if (fill) {
+        fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+      }
+    }
+
+    function updatePinButton(isPinned) {
+      const pinBtn = document.getElementById('pin-btn');
+      if (isPinned) {
+        pinBtn.classList.add('pinned');
+        pinBtn.title = 'Unpin popup';
+      } else {
+        pinBtn.classList.remove('pinned');
+        pinBtn.title = 'Pin popup';
+      }
+    }
+
+    async function executeCommand(command = null) {
+      const cmd = command || document.getElementById('primary-command').textContent;
+      await ipcRenderer.invoke('execute-command', cmd);
+    }
+
+    async function executeSpecificCommand(command) {
+      await ipcRenderer.invoke('execute-command', command);
+    }
+
+    async function copyCommand(element = null) {
+      const cmd = element ? element.textContent : document.getElementById('primary-command').textContent;
+      await ipcRenderer.invoke('copy-command', cmd);
+      
+      // Visual feedback
+      const btn = document.querySelector('.btn-primary');
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = originalText;
+      }, 1000);
+    }
+
+    function showDetails() {
+      // This could expand to show more detailed analysis
+      console.log('Show details clicked');
+    }
+
+    // Drag functionality for the popup
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+
+    document.querySelector('.popup-header').addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('close-btn') || e.target.classList.contains('pin-btn')) {
+        return;
+      }
+      
+      isDragging = true;
+      dragOffset.x = e.clientX;
+      dragOffset.y = e.clientY;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragOffset.x;
+        const deltaY = e.clientY - dragOffset.y;
+        
+        // This would need to communicate with the main process to move the window
+        // For now, just update the offset for next positioning
+        dragOffset.x = e.clientX;
+        dragOffset.y = e.clientY;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  </script>
+</body>
+</html>

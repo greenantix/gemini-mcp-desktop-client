@@ -49,7 +49,7 @@ class LinuxHelperDaemon {
       port: 3847,
       socketPath: '/tmp/linux-helper.sock',
       logLevel: 'info',
-      hotkey: 'F10',
+      hotkey: 'ForwardButton',
       popupTheme: 'dark',
       autoStart: true
     };

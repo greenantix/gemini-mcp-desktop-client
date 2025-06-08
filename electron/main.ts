@@ -299,11 +299,16 @@ app.whenReady().then(async () => {
   loadSettings();
   
   // Register Linux Helper global shortcuts using settings
-  const hotkeyRegistered = globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
-  if (hotkeyRegistered) {
-    console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) registered successfully`);
+  // Only register keyboard shortcuts, mouse buttons are handled by the daemon
+  if (currentSettings.hotkey !== 'ForwardButton') {
+    const hotkeyRegistered = globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
+    if (hotkeyRegistered) {
+      console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) registered successfully`);
+    } else {
+      console.log(`❌ Failed to register Linux Helper hotkey (${currentSettings.hotkey})`);
+    }
   } else {
-    console.log(`❌ Failed to register Linux Helper hotkey (${currentSettings.hotkey})`);
+    console.log(`🚀 Linux Helper ForwardButton hotkey handled by daemon`);
   }
   
   // ESC key to dismiss/reset state
@@ -421,7 +426,7 @@ interface AppSettings {
 
 const defaultSettings: AppSettings = {
   screenshotLocation: '~/Pictures/screenshots',
-  hotkey: 'F10',
+  hotkey: 'ForwardButton',
   theme: 'dark',
   autoSaveScreenshots: true,
   showSystemContext: true,
@@ -465,19 +470,28 @@ function saveSettingsToFile(settings: AppSettings): void {
 
 function updateHotkey(newHotkey: string): boolean {
   try {
-    // Unregister current hotkey
-    globalShortcut.unregister(currentSettings.hotkey);
+    // Unregister current hotkey if it's not ForwardButton
+    if (currentSettings.hotkey !== 'ForwardButton') {
+      globalShortcut.unregister(currentSettings.hotkey);
+    }
     
-    // Register new hotkey
-    const registered = globalShortcut.register(newHotkey, handleLinuxHelperHotkey);
-    if (registered) {
-      console.log(`🔄 Hotkey updated to: ${newHotkey}`);
-      return true;
+    // Register new hotkey only if it's not ForwardButton (daemon handles mouse buttons)
+    if (newHotkey !== 'ForwardButton') {
+      const registered = globalShortcut.register(newHotkey, handleLinuxHelperHotkey);
+      if (registered) {
+        console.log(`🔄 Hotkey updated to: ${newHotkey}`);
+        return true;
+      } else {
+        console.error(`❌ Failed to register new hotkey: ${newHotkey}`);
+        // Re-register old hotkey if it wasn't ForwardButton
+        if (currentSettings.hotkey !== 'ForwardButton') {
+          globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
+        }
+        return false;
+      }
     } else {
-      console.error(`❌ Failed to register new hotkey: ${newHotkey}`);
-      // Re-register old hotkey
-      globalShortcut.register(currentSettings.hotkey, handleLinuxHelperHotkey);
-      return false;
+      console.log(`🔄 Hotkey updated to: ForwardButton (handled by daemon)`);
+      return true;
     }
   } catch (error) {
     console.error('Error updating hotkey:', error);

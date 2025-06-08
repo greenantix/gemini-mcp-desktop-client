@@ -1,0 +1,46 @@
+🤖 Linux Helper Daemon - Easy Startup
+=======================================
+
+🧹 Cleaning up old processes...
+   ✅ No old daemon found
+   ✅ No old popup found
+   ✅ No old hotkey listeners found
+   ✅ Cleanup complete!
+
+🔨 Checking if build is needed...
+   ✅ Build is up to date!
+
+🔍 Checking required tools...
+   ✅ xbindkeys found
+   ✅ gnome-screenshot found
+
+🚀 Starting Linux Helper Daemon...
+   📁 Working directory: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon
+   🎯 Press Forward mouse button anywhere to test!
+   🛑 Press Ctrl+C to stop
+
+🔄 Starting in 3 seconds...
+🔄 Starting in 2 seconds...
+🔄 Starting in 1 second...
+
+🎉 LINUX HELPER IS STARTING!
+=======================================
+💡 TIP: Press Forward button to capture and analyze your screen
+💡 TIP: Press Ctrl+C here to stop the daemon
+💡 TIP: Run ./start.sh again to restart
+=======================================
+
+Debugger listening on ws://127.0.0.1:37637/acc8049a-cb45-4755-af55-0eb9fe4a46e0
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+[2025-06-08T18:47:13.493Z] [INFO] Starting Linux Helper Daemon...
+[2025-06-08T18:47:13.499Z] [INFO] Server started on port 3847 and socket /tmp/linux-helper.sock
+[2025-06-08T18:47:13.503Z] [INFO] Hotkey Button9 registered with xbindkeys
+[2025-06-08T18:47:13.503Z] [INFO] Linux Helper Daemon started successfully
+[2025-06-08T18:47:13.503Z] [INFO] - Hotkey: Button9
+[2025-06-08T18:47:13.503Z] [INFO] - Server: localhost:3847
+[2025-06-08T18:47:13.503Z] [INFO] - Socket: /tmp/linux-helper.sock
+[2025-06-08T18:47:55.843Z] [INFO] Shutting down Linux Helper Daemon...
+[2025-06-08T18:47:55.853Z] [INFO] Hotkey unregistered successfully
+[2025-06-08T18:47:55.854Z] [INFO] Daemon shutdown complete
+Waiting for the debugger to disconnect...

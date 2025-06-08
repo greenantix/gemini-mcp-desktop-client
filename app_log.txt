@@ -1,0 +1,595 @@
+
+> linux-helper-assistant@1.1.1 dev
+> vite
+
+[Build] Build process starting...
+vite v5.4.19 building for development...
+
+watching for file changes...
+vite v5.4.19 building for development...
+
+watching for file changes...
+
+  VITE v5.4.19  ready in 113 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+
+build started...
+
+build started...
+transforming...
+✓ 1 modules transformed.
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+transforming...
+rendering chunks...
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/preload.mjs
+[HMR] Affected modules: 
+computing gzip size...
+dist-electron/preload.mjs  2.29 kB │ gzip: 0.63 kB
+built in 66ms.
+✓ 2587 modules transformed.
+rendering chunks...
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/package-xQXj9c4e.js
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main.js
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/noAuth-DjsddSW4.js
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js
+[HMR] Affected modules: 
+computing gzip size...
+dist-electron/package-xQXj9c4e.js              0.09 kB │ gzip:     0.09 kB
+dist-electron/noAuth-DjsddSW4.js               0.14 kB │ gzip:     0.12 kB
+dist-electron/main.js                          0.22 kB │ gzip:     0.17 kB
+dist-electron/index-BtrfhPMf.js                0.22 kB │ gzip:     0.17 kB
+dist-electron/parseKnownFiles-CDhZ9H1H.js      0.59 kB │ gzip:     0.30 kB
+dist-electron/parseJsonBody-CehQSB6w.js        2.19 kB │ gzip:     0.80 kB
+dist-electron/index-Dd_pXVKg.js                2.44 kB │ gzip:     0.86 kB
+dist-electron/index-3fU2VOIC.js                3.07 kB │ gzip:     1.01 kB
+dist-electron/index-CZ7HAUX1.js                6.26 kB │ gzip:     2.04 kB
+dist-electron/index-B_5-dyeA.js               10.44 kB │ gzip:     2.56 kB
+dist-electron/index-DNR84fNM.js               12.54 kB │ gzip:     3.27 kB
+dist-electron/index-Da-DXL7h.js               13.30 kB │ gzip:     3.79 kB
+dist-electron/linuxHelper-DPgzIlUY.js         15.92 kB │ gzip:     5.14 kB
+dist-electron/index-DIvRVWXt.js               18.56 kB │ gzip:     4.92 kB
+dist-electron/loadSso-miqEXAKG.js             21.63 kB │ gzip:     5.06 kB
+dist-electron/index-BzbYJt3x.js               30.58 kB │ gzip:     5.57 kB
+dist-electron/index-DKVS6W0R.js               43.83 kB │ gzip:     8.34 kB
+dist-electron/main-QU0C9dzV.js             6,231.08 kB │ gzip: 1,240.16 kB
+built in 5204ms.
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[2025-06-08T18:51:45.332Z] Found 'npx' executable via which.sync at: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:51:45.333Z] --- Initializing uv path discovery (for 'uv' command) ---
+[2025-06-08T18:51:45.333Z] (uv command) Resources bin path for bundled executables: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin
+[2025-06-08T18:51:45.333Z] (uv command) Checking for bundled 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:51:45.333Z] ✅ (uv command) Successfully found BUNDLED 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:51:45.333Z] --- (uv command) Final resolved uv path: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv ---
+[2025-06-08T18:51:45.333Z] --- Initializing uvx path discovery ---
+[2025-06-08T18:51:45.333Z] (uvx command) Resources bin path for bundled executables: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin
+[2025-06-08T18:51:45.333Z] (uvx command) Checking for bundled 'uvx' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:51:45.333Z] (uvx command) Found bundled 'uvx'. Checking for its dependency 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:51:45.333Z] ✅ (uvx command) Successfully found BUNDLED 'uvx' (and verified 'uv' dependency at '/home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv') at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:51:45.333Z] --- (uvx command) Final resolved uvx path: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx ---
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[Main Process] PATH before fix: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin:/home/greenantix/AI/node_modules/.bin:/home/greenantix/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/home/greenantix/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/home/greenantix/.nvm/versions/node/v22.16.0/bin:/usr/bin:/bin:/usr/sbin:/sbin
+[Main Process] PATH after fix: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin:/home/greenantix/AI/node_modules/.bin:/home/greenantix/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/home/greenantix/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/home/greenantix/.nvm/versions/node/v22.16.0/bin:/usr/bin:/bin:/usr/sbin:/sbin
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+(node:171927) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `electron --trace-deprecation ...` to show where the warning was created)
+⚙️ Settings loaded: {
+  screenshotLocation: '~/Pictures/screenshots',
+  hotkey: 'F10',
+  theme: 'dark',
+  autoSaveScreenshots: true,
+  showSystemContext: true,
+  linuxDistro: 'pop-os'
+}
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+🚀 Linux Helper hotkey (F10) registered successfully
+🚀 Backend server running on http://localhost:5001
+(node:171927) UnhandledPromiseRejectionWarning: ReferenceError: __dirname is not defined in ES module scope
+This file is being treated as an ES module because it has a '.js' file extension and '/home/greenantix/AI/gemini-mcp-desktop-client/package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/index-DIvRVWXt.js:603:53
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+(node:171927) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 2)
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[171927:0608/135146.957215:ERROR:CONSOLE:1] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[171927:0608/135146.958198:ERROR:CONSOLE:1] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+🔥 Linux Helper activated - capturing screenshot...
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+💾 Screenshot saved: /home/greenantix/Pictures/screenshots/linux-helper-2025-06-08T18-52-01-145Z.png
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[Linux Helper] Using direct API key for vision analysis
+[2025-06-08T18:52:01.191Z] --- Starting connectToMcpServers ---
+[2025-06-08T18:52:01.191Z] Running in development mode.
+[2025-06-08T18:52:01.191Z] Attempting to load MCP config from: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/mcpServicesConfig.json
+[2025-06-08T18:52:01.191Z] NPM Executable Path (npx): /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:52:01.191Z] UVX Executable Path (uvx): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:52:01.191Z] UV Executable Path (uv): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:52:01.191Z] Current active MCP clients: None
+[2025-06-08T18:52:01.192Z] Found 3 server configurations.
+[2025-06-08T18:52:01.192Z] Attempting to connect to server: Filesystem (Runner: npx, Command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx, Args: ["-y","@modelcontextprotocol/server-filesystem","/home/greenantix/AI","/home/greenantix/Desktop","/home/greenantix/Downloads","/home/greenantix/Documents"])
+[2025-06-08T18:52:01.192Z] Starting MCP server "Filesystem" with command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx -y @modelcontextprotocol/server-filesystem /home/greenantix/AI /home/greenantix/Desktop /home/greenantix/Downloads /home/greenantix/Documents
+[2025-06-08T18:52:01.211Z] Attempting to connect to server: Memory (Runner: npx, Command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx, Args: ["-y","@modelcontextprotocol/server-memory"])
+[2025-06-08T18:52:01.211Z] Starting MCP server "Memory" with command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx -y @modelcontextprotocol/server-memory
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[2025-06-08T18:52:01.219Z] Attempting to connect to server: Everything (Runner: npx, Command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx, Args: ["-y","@modelcontextprotocol/server-everything"])
+[2025-06-08T18:52:01.220Z] Starting MCP server "Everything" with command: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx -y @modelcontextprotocol/server-everything
+Knowledge Graph MCP Server running on stdio
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[2025-06-08T18:52:01.941Z] MCP Client connected for Memory. Listing tools...
+[2025-06-08T18:52:01.943Z] ✅ Connected to "memory" (Memory) using npx with tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes
+Secure MCP Filesystem Server running on stdio
+Allowed directories: [
+  '/home/greenantix/AI',
+  '/home/greenantix/Desktop',
+  '/home/greenantix/Downloads',
+  '/home/greenantix/Documents'
+]
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[2025-06-08T18:52:02.012Z] MCP Client connected for Filesystem. Listing tools...
+[2025-06-08T18:52:02.014Z] ✅ Connected to "filesystem" (Filesystem) using npx with tools: read_file, read_multiple_files, write_file, edit_file, create_directory, list_directory, directory_tree, move_file, search_files, get_file_info, list_allowed_directories
+Starting default (STDIO) server...
+[2025-06-08T18:52:02.056Z] MCP Client connected for Everything. Listing tools...
+[2025-06-08T18:52:02.058Z] ✅ Connected to "everything" (Everything) using npx with tools: echo, add, printEnv, longRunningOperation, sampleLLM, getTinyImage, annotatedMessage, getResourceReference
+[2025-06-08T18:52:02.058Z] 🔌 Total 28 MCP tools aggregated for Gemini from 3 active server(s).
+[2025-06-08T18:52:02.058Z] connectToMcpServers finished. 3 clients currently active globally. 28 tools mapped for this run.
+[2025-06-08T18:52:02.059Z] Globally active MCP client keys: memory, filesystem, everything
+📱 Received SHOW_POPUP request at position: 800, 400
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[Linux Helper] Using direct API key for vision analysis
+[2025-06-08T18:52:08.566Z] --- Starting connectToMcpServers ---
+[2025-06-08T18:52:08.566Z] Running in development mode.
+[2025-06-08T18:52:08.566Z] Attempting to load MCP config from: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/mcpServicesConfig.json
+[2025-06-08T18:52:08.566Z] NPM Executable Path (npx): /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:52:08.566Z] UVX Executable Path (uvx): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:52:08.566Z] UV Executable Path (uv): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:52:08.566Z] Current active MCP clients: memory, filesystem, everything
+[2025-06-08T18:52:08.567Z] Found 3 server configurations.
+[2025-06-08T18:52:08.567Z] Server "Filesystem" (key: filesystem): Found existing client. Verifying connection...
+[2025-06-08T18:52:08.567Z] Server "Memory" (key: memory): Found existing client. Verifying connection...
+[2025-06-08T18:52:08.567Z] Server "Everything" (key: everything): Found existing client. Verifying connection...
+[2025-06-08T18:52:08.570Z] ✅ Server "Filesystem" (key: filesystem): Reusing active client. Tools: read_file, read_multiple_files, write_file, edit_file, create_directory, list_directory, directory_tree, move_file, search_files, get_file_info, list_allowed_directories
+[2025-06-08T18:52:08.570Z] ✅ Server "Memory" (key: memory): Reusing active client. Tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes
+[2025-06-08T18:52:08.571Z] ✅ Server "Everything" (key: everything): Reusing active client. Tools: echo, add, printEnv, longRunningOperation, sampleLLM, getTinyImage, annotatedMessage, getResourceReference
+[2025-06-08T18:52:08.571Z] 🔌 Total 28 MCP tools aggregated for Gemini from 3 active server(s).
+[2025-06-08T18:52:08.571Z] connectToMcpServers finished. 3 clients currently active globally. 28 tools mapped for this run.
+[2025-06-08T18:52:08.571Z] Globally active MCP client keys: memory, filesystem, everything
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+📱 Received SHOW_POPUP request at position: 200, 200
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+🕐 Linux Helper timeout - resetting state
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+PayloadTooLargeError: request entity too large
+    at readStream (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:14748:19)
+    at getRawBody (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:14729:14)
+    at read2 (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:14905:5)
+    at jsonParser (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:27181:7)
+    at Layer$2.handleRequest (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31641:17)
+    at trimPrefix (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31998:14)
+    at file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31969:9
+    at processParams (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:32114:12)
+    at next (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31963:5)
+    at cors2 (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35158:7)
+    at file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35190:17
+    at originCallback (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35181:15)
+    at file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35185:13
+    at optionsCallback (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35167:9)
+    at corsMiddleware (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:35171:7)
+    at Layer$2.handleRequest (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31641:17)
+    at trimPrefix (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31998:14)
+    at file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31969:9
+    at processParams (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:32114:12)
+    at next (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31963:5)
+    at router2.handle (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:31899:3)
+    at app2.handle2 [as handle] (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:32308:17)
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/daemon_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/.claude/settings.local.json
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/.claude/settings.local.json
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/.env.example
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/electron/main.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/package.json
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/App.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/App.tsx
+1:53:57 PM [vite] hmr update /src/App.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/controllers/mcpServiceController/getHomeRoute.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/controllers/mcpServiceController/getMcpServicesConfig.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/controllers/mcpServiceController/saveMcpServicesConfig.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/controllers/serverConfiguration/getServerConfiguration.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/controllers/serverConfiguration/saveServerConfiguration.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/routes/index.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/routes/mcpServiceConfig/mcpServiceConfig.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/routes/serverConfiguration/serverConfiguration.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/server.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/components/LinuxHelper.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/components/LinuxHelper.tsx
+1:53:57 PM [vite] hmr update /src/components/LinuxHelper.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/contexts/ThemeContext.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/contexts/ThemeContext.tsx
+1:53:57 PM [vite] hmr update /src/contexts/ThemeContext.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/global.d.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/hotkey-manager.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/main.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/package.json
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/server.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/linux-helper-daemon/start.sh
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/main.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/main.tsx
+1:53:57 PM [vite] page reload src/main.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Chat/ChatHeader.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Chat/ChatHeader.tsx
+1:53:57 PM [vite] hmr update /src/screens/Chat/ChatHeader.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Chat/ChatPage.tsx
+[HMR] Affected modules: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Chat/ChatPage.tsx
+1:53:57 PM [vite] hmr update /src/screens/Chat/ChatPage.tsx
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Chat/types/types.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/screens/Settings/SettingsPage.tsx
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/theme.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/utils/getGeminiApiKey.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/utils/linuxHelper.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/src/utils/llmChat/parsers/txtParser.ts
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/tests/chat.test.js
+[HMR] Affected modules: 
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/tsconfig.json
+[HMR] Affected modules: 
+1:53:57 PM [vite] vite.config.ts changed, restarting server...
+
+build started...
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+1:53:57 PM [vite] page reload src/linux-helper-popup/popup.html
+1:53:58 PM [vite] src/utils/debugPlugin.ts changed, restarting server...
+[HMR] File changed: /home/greenantix/AI/gemini-mcp-desktop-client/app_log.txt
+[HMR] Affected modules: 
+[Build] Build completed successfully
+Re-optimizing dependencies because vite config has changed
+(node:171927) electron: Failed to load URL: http://localhost:5173/ with error: ERR_CONNECTION_REFUSED
+[2025-06-08T18:53:58.212Z] --- Starting connectToMcpServers ---
+[2025-06-08T18:53:58.212Z] Running in development mode.
+[2025-06-08T18:53:58.212Z] Attempting to load MCP config from: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/mcpServicesConfig.json
+[2025-06-08T18:53:58.212Z] NPM Executable Path (npx): /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:53:58.212Z] UVX Executable Path (uvx): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:53:58.212Z] UV Executable Path (uv): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:53:58.212Z] Current active MCP clients: memory, filesystem, everything
+[2025-06-08T18:53:58.212Z] Found 3 server configurations.
+[2025-06-08T18:53:58.212Z] Server "Filesystem" (key: filesystem): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.213Z] Server "Memory" (key: memory): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.213Z] Server "Everything" (key: everything): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.214Z] ✅ Server "Memory" (key: memory): Reusing active client. Tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes
+[2025-06-08T18:53:58.215Z] ✅ Server "Filesystem" (key: filesystem): Reusing active client. Tools: read_file, read_multiple_files, write_file, edit_file, create_directory, list_directory, directory_tree, move_file, search_files, get_file_info, list_allowed_directories
+[2025-06-08T18:53:58.215Z] ✅ Server "Everything" (key: everything): Reusing active client. Tools: echo, add, printEnv, longRunningOperation, sampleLLM, getTinyImage, annotatedMessage, getResourceReference
+[2025-06-08T18:53:58.215Z] 🔌 Total 28 MCP tools aggregated for Gemini from 3 active server(s).
+[2025-06-08T18:53:58.215Z] connectToMcpServers finished. 3 clients currently active globally. 28 tools mapped for this run.
+[2025-06-08T18:53:58.215Z] Globally active MCP client keys: memory, filesystem, everything
+Tools configured for Gemini: [
+  'create_entities',
+  'create_relations',
+  'add_observations',
+  'delete_entities',
+  'delete_observations',
+  'delete_relations',
+  'read_graph',
+  'search_nodes',
+  'open_nodes',
+  'read_file',
+  'read_multiple_files',
+  'write_file',
+  'edit_file',
+  'create_directory',
+  'list_directory',
+  'directory_tree',
+  'move_file',
+  'search_files',
+  'get_file_info',
+  'list_allowed_directories',
+  'echo',
+  'add',
+  'printEnv',
+  'longRunningOperation',
+  'sampleLLM',
+  'getTinyImage',
+  'annotatedMessage',
+  'getResourceReference'
+]
+Connected MCP Clients: [ 'memory', 'filesystem', 'everything' ]
+[Gemini] Using direct API key for model: gemini-1.5-flash
+  [API Attempt 1/3] Sending initial user message to Gemini...
+vite v5.4.19 building for development...
+
+watching for file changes...
+vite v5.4.19 building for development...
+
+watching for file changes...
+
+build started...
+
+build started...
+1:53:58 PM [vite] server restarted.
+transforming...
+✓ 1 modules transformed.
+transforming...
+rendering chunks...
+computing gzip size...
+dist-electron/preload.mjs  2.29 kB │ gzip: 0.63 kB
+built in 346ms.
+  [API Attempt 1] SUCCESS sending initial user message.
+Final Gemini response being sent to user: I cannot directly access real-time information, including weather data.  To get the weather in your area, please use a dedicated weather app or website.
+
+Chat interaction logged successfully to /home/greenantix/AI/gemini-mcp-desktop-client/gemini-1.5-flash.log
+Attempting to parse file: input.pptx, temp path: /tmp/jqi9ylbujjng02b5cisnsw8i1
+[2025-06-08T18:53:58.835Z] --- Starting connectToMcpServers ---
+[2025-06-08T18:53:58.836Z] Running in development mode.
+[2025-06-08T18:53:58.836Z] Attempting to load MCP config from: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/mcpServicesConfig.json
+[2025-06-08T18:53:58.836Z] NPM Executable Path (npx): /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:53:58.836Z] UVX Executable Path (uvx): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:53:58.836Z] UV Executable Path (uv): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:53:58.836Z] Current active MCP clients: memory, filesystem, everything
+[2025-06-08T18:53:58.836Z] Found 3 server configurations.
+[2025-06-08T18:53:58.836Z] Server "Filesystem" (key: filesystem): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.836Z] Server "Memory" (key: memory): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.836Z] Server "Everything" (key: everything): Found existing client. Verifying connection...
+[2025-06-08T18:53:58.837Z] ✅ Server "Memory" (key: memory): Reusing active client. Tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes
+[2025-06-08T18:53:58.837Z] ✅ Server "Everything" (key: everything): Reusing active client. Tools: echo, add, printEnv, longRunningOperation, sampleLLM, getTinyImage, annotatedMessage, getResourceReference
+[2025-06-08T18:53:58.838Z] ✅ Server "Filesystem" (key: filesystem): Reusing active client. Tools: read_file, read_multiple_files, write_file, edit_file, create_directory, list_directory, directory_tree, move_file, search_files, get_file_info, list_allowed_directories
+[2025-06-08T18:53:58.838Z] 🔌 Total 28 MCP tools aggregated for Gemini from 3 active server(s).
+[2025-06-08T18:53:58.838Z] connectToMcpServers finished. 3 clients currently active globally. 28 tools mapped for this run.
+[2025-06-08T18:53:58.838Z] Globally active MCP client keys: memory, filesystem, everything
+Tools configured for Gemini: [
+  'create_entities',
+  'create_relations',
+  'add_observations',
+  'delete_entities',
+  'delete_observations',
+  'delete_relations',
+  'read_graph',
+  'search_nodes',
+  'open_nodes',
+  'echo',
+  'add',
+  'printEnv',
+  'longRunningOperation',
+  'sampleLLM',
+  'getTinyImage',
+  'annotatedMessage',
+  'getResourceReference',
+  'read_file',
+  'read_multiple_files',
+  'write_file',
+  'edit_file',
+  'create_directory',
+  'list_directory',
+  'directory_tree',
+  'move_file',
+  'search_files',
+  'get_file_info',
+  'list_allowed_directories'
+]
+Connected MCP Clients: [ 'memory', 'filesystem', 'everything' ]
+[Gemini] Using direct API key for model: gemini-1.5-flash
+  [API Attempt 1/3] Sending initial user message to Gemini...
+  [API Attempt 1] SUCCESS sending initial user message.
+Final Gemini response being sent to user: The provided text is not a presentation, but rather a single slide from a PowerPoint presentation, along with instructions on how to print handouts.  The slide shows the title "This is a Sample Slide", a bulleted list (whose content is not provided), and the name of St. Cloud Technical College.  There is mention of a "Sample PowerPoint File", suggesting that more slides exist beyond what's shown.
+
+Chat interaction logged successfully to /home/greenantix/AI/gemini-mcp-desktop-client/gemini-1.5-flash.log
+[2025-06-08T18:53:59.759Z] --- Starting connectToMcpServers ---
+[2025-06-08T18:53:59.759Z] Running in development mode.
+[2025-06-08T18:53:59.759Z] Attempting to load MCP config from: /home/greenantix/AI/gemini-mcp-desktop-client/src/backend/configurations/mcpServicesConfig.json
+[2025-06-08T18:53:59.759Z] NPM Executable Path (npx): /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:53:59.760Z] UVX Executable Path (uvx): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:53:59.760Z] UV Executable Path (uv): /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:53:59.760Z] Current active MCP clients: memory, filesystem, everything
+[2025-06-08T18:53:59.760Z] Found 3 server configurations.
+[2025-06-08T18:53:59.760Z] Server "Filesystem" (key: filesystem): Found existing client. Verifying connection...
+[2025-06-08T18:53:59.760Z] Server "Memory" (key: memory): Found existing client. Verifying connection...
+[2025-06-08T18:53:59.760Z] Server "Everything" (key: everything): Found existing client. Verifying connection...
+[2025-06-08T18:53:59.761Z] ✅ Server "Memory" (key: memory): Reusing active client. Tools: create_entities, create_relations, add_observations, delete_entities, delete_observations, delete_relations, read_graph, search_nodes, open_nodes
+[2025-06-08T18:53:59.762Z] ✅ Server "Filesystem" (key: filesystem): Reusing active client. Tools: read_file, read_multiple_files, write_file, edit_file, create_directory, list_directory, directory_tree, move_file, search_files, get_file_info, list_allowed_directories
+[2025-06-08T18:53:59.762Z] ✅ Server "Everything" (key: everything): Reusing active client. Tools: echo, add, printEnv, longRunningOperation, sampleLLM, getTinyImage, annotatedMessage, getResourceReference
+[2025-06-08T18:53:59.762Z] 🔌 Total 28 MCP tools aggregated for Gemini from 3 active server(s).
+[2025-06-08T18:53:59.762Z] connectToMcpServers finished. 3 clients currently active globally. 28 tools mapped for this run.
+[2025-06-08T18:53:59.762Z] Globally active MCP client keys: memory, filesystem, everything
+Tools configured for Gemini: [
+  'create_entities',
+  'create_relations',
+  'add_observations',
+  'delete_entities',
+  'delete_observations',
+  'delete_relations',
+  'read_graph',
+  'search_nodes',
+  'open_nodes',
+  'read_file',
+  'read_multiple_files',
+  'write_file',
+  'edit_file',
+  'create_directory',
+  'list_directory',
+  'directory_tree',
+  'move_file',
+  'search_files',
+  'get_file_info',
+  'list_allowed_directories',
+  'echo',
+  'add',
+  'printEnv',
+  'longRunningOperation',
+  'sampleLLM',
+  'getTinyImage',
+  'annotatedMessage',
+  'getResourceReference'
+]
+Connected MCP Clients: [ 'memory', 'filesystem', 'everything' ]
+[Gemini] Using direct API key for model: invalid-model-to-cause-error
+  [API Attempt 1/3] Sending initial user message to Gemini...
+  [API Attempt 1/3] FAILED sending initial user message. Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/invalid-model-to-cause-error:generateContent: [404 Not Found] models/invalid-model-to-cause-error is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+❌ Gemini API call for initial user message failed after 1 attempts. Not retrying or max retries reached.
+Error in chatWithLLM: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/invalid-model-to-cause-error:generateContent: [404 Not Found] models/invalid-model-to-cause-error is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at handleResponseNotOk (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:37845:9)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at makeRequest (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:37818:5)
+    at generateContent (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:38215:21)
+    at ChatSession.sendMessage (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:38524:5)
+    at sendMessageWithRetry (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:248997:23)
+    at chatWithLLM (file:///home/greenantix/AI/gemini-mcp-desktop-client/dist-electron/main-QU0C9dzV.js:249137:19)
+Chat interaction logged successfully to /home/greenantix/AI/gemini-mcp-desktop-client/invalid-model-to-cause-error.log
+✓ 53 modules transformed.
+✓ 2530 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-electron/package-xQXj9c4e.js              0.09 kB │ gzip:     0.09 kB
+dist-electron/noAuth-DjsddSW4.js               0.14 kB │ gzip:     0.12 kB
+dist-electron/main.js                          0.22 kB │ gzip:     0.17 kB
+dist-electron/index-COw2EYno.js                0.22 kB │ gzip:     0.17 kB
+dist-electron/parseKnownFiles-CFOYrp0T.js      0.59 kB │ gzip:     0.30 kB
+dist-electron/parseJsonBody-CsH57eBb.js        2.19 kB │ gzip:     0.80 kB
+dist-electron/index-C1bVdpiX.js                2.44 kB │ gzip:     0.86 kB
+dist-electron/index-8_ouma6B.js                3.07 kB │ gzip:     1.01 kB
+dist-electron/index-oLwLFyXS.js                6.26 kB │ gzip:     2.04 kB
+dist-electron/index-BYvB4SXi.js               10.44 kB │ gzip:     2.55 kB
+dist-electron/index-Du5dvUYU.js               12.54 kB │ gzip:     3.26 kB
+dist-electron/index-BLJnEoIk.js               13.30 kB │ gzip:     3.79 kB
+dist-electron/linuxHelper-CZe4xPrJ.js         15.94 kB │ gzip:     5.14 kB
+dist-electron/loadSso-CWby_T2R.js             21.63 kB │ gzip:     5.06 kB
+dist-electron/index-D9MblKYk.js               30.57 kB │ gzip:     5.57 kB
+dist-electron/index-BwgTUN6W.js               43.83 kB │ gzip:     8.34 kB
+dist-electron/main-CWuS6JJB.js             6,149.57 kB │ gzip: 1,221.93 kB
+built in 10477ms.
+[171927:0608/135413.816582:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:327] GPU state invalid after WaitForGetOffsetInRange.
+[171927:0608/135413.817476:ERROR:content/common/zygote/zygote_communication_linux.cc:296] Failed to send GetTerminationStatus message to zygote
+[171927:0608/135413.827343:ERROR:content/browser/network_service_instance_impl.cc:586] Network service crashed, restarting service.
+[171927:0608/135413.839522:ERROR:content/common/zygote/zygote_communication_linux.cc:296] Failed to send GetTerminationStatus message to zygote
+[171927:0608/135413.841791:ERROR:content/common/zygote/zygote_communication_linux.cc:296] Failed to send GetTerminationStatus message to zygote
+[171927:0608/135413.847896:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.850069:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.851007:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.851724:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.852347:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.852775:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.853253:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.853606:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.853913:ERROR:content/browser/gpu/gpu_process_host.cc:950] GPU process launch failed: error_code=1002
+[171927:0608/135413.853928:FATAL:content/browser/gpu/gpu_data_manager_impl_private.cc:416] GPU process isn't usable. Goodbye.
+dist-electron/package-xQXj9c4e.js              0.09 kB │ gzip:     0.09 kB
+dist-electron/noAuth-DjsddSW4.js               0.14 kB │ gzip:     0.12 kB
+dist-electron/main.js                          0.22 kB │ gzip:     0.16 kB
+dist-electron/index-DfMP32uZ.js                0.22 kB │ gzip:     0.17 kB
+dist-electron/parseKnownFiles-39eGUCMS.js      0.59 kB │ gzip:     0.30 kB
+dist-electron/parseJsonBody-CPuJTMHn.js        2.19 kB │ gzip:     0.80 kB
+dist-electron/index-Dbv0b0I9.js                2.44 kB │ gzip:     0.86 kB
+dist-electron/index-ByJIb4V7.js                3.07 kB │ gzip:     1.01 kB
+dist-electron/index-DVnDuFyV.js                6.26 kB │ gzip:     2.04 kB
+dist-electron/index-Cbd2FfLx.js               10.44 kB │ gzip:     2.56 kB
+dist-electron/index-hD8Hrmi1.js               12.54 kB │ gzip:     3.26 kB
+dist-electron/index-6v1SK_lX.js               13.30 kB │ gzip:     3.79 kB
+dist-electron/linuxHelper-NeUb9gnQ.js         15.94 kB │ gzip:     5.14 kB
+dist-electron/loadSso-DZybgGHp.js             21.63 kB │ gzip:     5.06 kB
+dist-electron/index-CE2dgkR3.js               30.57 kB │ gzip:     5.57 kB
+dist-electron/index-M8VuEFvP.js               43.83 kB │ gzip:     8.34 kB
+dist-electron/main-Dj5HzhHp.js             6,149.79 kB │ gzip: 1,221.98 kB
+built in 15747ms.
+[2025-06-08T18:54:14.467Z] Found 'npx' executable via which.sync at: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin/npx
+[2025-06-08T18:54:14.467Z] --- Initializing uv path discovery (for 'uv' command) ---
+[2025-06-08T18:54:14.467Z] (uv command) Resources bin path for bundled executables: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin
+[2025-06-08T18:54:14.467Z] (uv command) Checking for bundled 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:54:14.467Z] ✅ (uv command) Successfully found BUNDLED 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:54:14.468Z] --- (uv command) Final resolved uv path: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv ---
+[2025-06-08T18:54:14.468Z] --- Initializing uvx path discovery ---
+[2025-06-08T18:54:14.468Z] (uvx command) Resources bin path for bundled executables: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin
+[2025-06-08T18:54:14.468Z] (uvx command) Checking for bundled 'uvx' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:54:14.468Z] (uvx command) Found bundled 'uvx'. Checking for its dependency 'uv' at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv
+[2025-06-08T18:54:14.468Z] ✅ (uvx command) Successfully found BUNDLED 'uvx' (and verified 'uv' dependency at '/home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uv') at: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx
+[2025-06-08T18:54:14.468Z] --- (uvx command) Final resolved uvx path: /home/greenantix/AI/gemini-mcp-desktop-client/resources/bin/uvx ---
+[Main Process] PATH before fix: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin:/home/greenantix/AI/node_modules/.bin:/home/greenantix/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/home/greenantix/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/home/greenantix/.nvm/versions/node/v22.16.0/bin:/usr/bin:/bin:/usr/sbin:/sbin
+[Main Process] PATH after fix: /home/greenantix/AI/gemini-mcp-desktop-client/node_modules/.bin:/home/greenantix/AI/node_modules/.bin:/home/greenantix/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/home/greenantix/.nvm/versions/node/v22.16.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/home/greenantix/.nvm/versions/node/v22.16.0/bin:/usr/bin:/bin:/usr/sbin:/sbin
+(node:174798) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `electron --trace-deprecation ...` to show where the warning was created)
+⚙️ Settings loaded: {
+  screenshotLocation: '~/Pictures/screenshots',
+  hotkey: 'F10',
+  theme: 'dark',
+  autoSaveScreenshots: true,
+  showSystemContext: true,
+  linuxDistro: 'pop-os'
+}
+🚀 Linux Helper hotkey (F10) registered successfully
+🚀 Backend server running on http://localhost:5001
+[174798:0608/135415.838452:ERROR:CONSOLE:1] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[174798:0608/135415.838753:ERROR:CONSOLE:1] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+🔥 Linux Helper activated - capturing screenshot...
+💾 Screenshot saved: /home/greenantix/Pictures/screenshots/linux-helper-2025-06-08T18-55-20-203Z.png

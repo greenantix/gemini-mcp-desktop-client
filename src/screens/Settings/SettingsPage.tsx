@@ -37,7 +37,7 @@ interface SettingsConfig {
 
 const defaultSettings: SettingsConfig = {
   screenshotLocation: '~/Pictures/screenshots',
-  hotkey: 'F10',
+  hotkey: 'ForwardButton',
   theme: 'dark',
   autoSaveScreenshots: true,
   showSystemContext: true,
@@ -45,7 +45,7 @@ const defaultSettings: SettingsConfig = {
 };
 
 const availableHotkeys = [
-  'F10', 'F11', 'F12',
+  'ForwardButton', 'F10', 'F11', 'F12',
   'Ctrl+Shift+S', 'Ctrl+Alt+S',
   'Alt+S', 'Alt+Print'
 ];

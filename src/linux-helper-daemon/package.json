@@ -1,0 +1,42 @@
+{
+  "name": "linux-helper-daemon",
+  "version": "1.0.0",
+  "description": "System-wide Linux Helper daemon for Pop!_OS development assistance",
+  "main": "main.js",
+  "bin": {
+    "linux-helper-daemon": "./main.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node main.js",
+    "dev": "ts-node main.ts",
+    "install-service": "node scripts/install-service.js",
+    "uninstall-service": "node scripts/uninstall-service.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "linux",
+    "helper",
+    "daemon",
+    "screenshot",
+    "ai",
+    "assistant",
+    "development"
+  ],
+  "author": "Linux Helper Project",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "os": [
+    "linux"
+  ]
+}

@@ -195,7 +195,11 @@ class LinuxHelperPopup {
 
     switch (message.type) {
       case 'show':
-        this.currentState = { ...this.currentState, ...message.data };
+        this.currentState = { 
+          status: 'loading', 
+          title: 'Linux Helper',
+          ...message.data 
+        };
         await this.showAtCursor();
         socket.write(JSON.stringify({ success: true, visible: true }));
         break;
@@ -241,8 +245,8 @@ class LinuxHelperPopup {
     this.window.show();
     this.isVisible = true;
 
-    // Start cursor tracking for followCursor behavior
-    this.startCursorTracking();
+    // Don't start cursor tracking - popup should stay at initial position for interaction
+    // this.startCursorTracking();
 
     // Animate fade-in
     await this.animateFadeIn();
@@ -256,6 +260,10 @@ class LinuxHelperPopup {
 
     const display = screen.getDisplayNearestPoint(this.cursorPosition);
     const windowBounds = this.window.getBounds();
+    
+    console.log('[Popup] Positioning popup at cursor:', this.cursorPosition);
+    console.log('[Popup] Display bounds:', display.bounds);
+    console.log('[Popup] Window bounds:', windowBounds);
     
     let x = this.cursorPosition.x + this.config.offset.x;
     let y = this.cursorPosition.y + this.config.offset.y;
@@ -317,6 +325,7 @@ class LinuxHelperPopup {
       }
     }
 
+    console.log('[Popup] Final position:', { x: Math.floor(x), y: Math.floor(y) });
     this.window.setPosition(Math.floor(x), Math.floor(y));
   }
 
@@ -411,6 +420,7 @@ class LinuxHelperPopup {
   }
 
   private updateUI(): void {
+    console.log('[Popup] Updating UI with state:', this.currentState);
     if (this.window && this.window.webContents) {
       this.window.webContents.send('update-state', this.currentState);
     }

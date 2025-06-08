@@ -1,7 +1,9 @@
 import { Logger } from './logger';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import fs from 'fs';
+import { execSync } from 'child_process';
+import os from 'os';
 
-// Import the existing Linux Helper functionality
-// We'll need to adapt this to work outside of the Electron context
 export interface AnalysisResult {
   summary: string;
   suggestions: Array<{
@@ -19,7 +21,7 @@ export class AIAnalyzer {
 
   constructor(logger: Logger, apiKey?: string) {
     this.logger = logger;
-    this.apiKey = apiKey || process.env.GEMINI_API_KEY;
+    this.apiKey = apiKey || process.env.GEMINI_API_KEY || "AIzaSyC6oGrn1D62R5urFLAvDgUAhuDQxL-J8xc";
   }
 
   async analyzeScreenshot(screenshotDataUrl: string, settings?: {
@@ -27,16 +29,13 @@ export class AIAnalyzer {
     showSystemContext?: boolean;
   }): Promise<AnalysisResult> {
     try {
-      // Import the existing Linux Helper functionality
-      const { analyzeScreenshotWithLinuxHelper, parseCommandsFromResponse } = await this.importLinuxHelper();
-      
       this.logger.info('Starting AI analysis of screenshot');
       
-      // Use the existing analysis function
-      const analysisText = await analyzeScreenshotWithLinuxHelper(screenshotDataUrl, settings);
+      // Use real Gemini analysis
+      const analysisText = await this.analyzeScreenshotWithGemini(screenshotDataUrl, settings);
       
       // Parse commands from the response
-      const commands = parseCommandsFromResponse(analysisText);
+      const commands = this.parseCommandsFromResponse(analysisText);
       
       // Extract suggestions from the analysis
       const suggestions = this.extractSuggestions(analysisText, commands);
@@ -58,38 +57,250 @@ export class AIAnalyzer {
     }
   }
 
-  private async importLinuxHelper() {
-    // For Phase 1, we'll use a standalone version to avoid Electron dependencies
-    // Later phases will implement proper communication with the main app
-    this.logger.info('Using standalone AI analyzer (Phase 1 implementation)');
-    return this.createStandaloneAnalyzer();
+  private async analyzeScreenshotWithGemini(screenshotDataUrl: string, settings?: {
+    linuxDistro?: string;
+    showSystemContext?: boolean;
+  }): Promise<string> {
+    try {
+      if (!this.apiKey) {
+        throw new Error('No API key available for Gemini');
+      }
+
+      const genAI = new GoogleGenerativeAI(this.apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      
+      // Gather system context for personalized analysis
+      const context = this.getSystemContext(settings?.linuxDistro);
+      const prompt = this.createPersonalAssistantPrompt(context);
+      
+      // Convert data URL to the format Gemini expects
+      const base64Data = screenshotDataUrl.split(",")[1];
+      const imagePart = {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/png"
+        }
+      };
+      
+      const result = await model.generateContent([prompt, imagePart]);
+      const response = result.response;
+      return response.text();
+      
+    } catch (error) {
+      this.logger.error('Gemini API error:', error);
+      return `❌ **Error analyzing screenshot**
+
+Sorry, I couldn't analyze the screenshot. This might be due to:
+- API key issues
+- Network connectivity problems  
+- Rate limiting
+
+Please try again in a moment.`;
+    }
   }
 
-  private createStandaloneAnalyzer() {
-    // Simplified version of the analysis functionality
-    return {
-      analyzeScreenshotWithLinuxHelper: async (screenshotDataUrl: string, settings?: any) => {
-        // This would be a simplified version that doesn't depend on Electron
-        // For now, return a placeholder
-        return "Analysis: The screenshot shows development work. Consider running tests and checking for errors.";
-      },
-      parseCommandsFromResponse: (response: string) => {
-        // Simple command extraction
-        const commands: string[] = [];
-        const codeBlockRegex = /```(?:bash|shell|sh)?\n(.*?)\n```/gs;
-        let match;
+  private getSystemContext(preferredDistro?: string) {
+    try {
+      const username = os.userInfo().username;
+      const hostname = os.hostname();
+      const currentDir = process.cwd();
+      
+      // Get git info if in a git repo
+      let gitInfo = null;
+      try {
+        const gitUser = execSync("git config user.name", { encoding: "utf-8" }).trim();
+        const gitEmail = execSync("git config user.email", { encoding: "utf-8" }).trim();
+        const gitBranch = execSync("git branch --show-current", { encoding: "utf-8" }).trim();
+        const gitStatus = execSync("git status --porcelain", { encoding: "utf-8" }).trim();
         
-        while ((match = codeBlockRegex.exec(response)) !== null) {
-          const commandBlock = match[1].trim();
-          const blockCommands = commandBlock.split('\n').filter(cmd => 
-            cmd.trim() && !cmd.trim().startsWith('#')
-          );
-          commands.push(...blockCommands);
-        }
-        
-        return commands;
+        gitInfo = {
+          user: gitUser,
+          email: gitEmail,
+          branch: gitBranch,
+          hasChanges: gitStatus.length > 0,
+          statusSummary: gitStatus
+        };
+      } catch (e) {
+        // Not in a git repo or git not available
       }
-    };
+      
+      // Get distro info
+      let distroInfo = "Linux";
+      if (preferredDistro) {
+        const distroMap = {
+          'pop-os': 'Pop!_OS',
+          'ubuntu': 'Ubuntu',
+          'debian': 'Debian',
+          'fedora': 'Fedora',
+          'arch': 'Arch Linux',
+          'mint': 'Linux Mint',
+          'generic': 'Linux'
+        };
+        distroInfo = distroMap[preferredDistro as keyof typeof distroMap] || 'Linux';
+      } else {
+        try {
+          const osRelease = fs.readFileSync("/etc/os-release", "utf-8");
+          const prettyName = osRelease.match(/PRETTY_NAME="([^"]+)"/);
+          if (prettyName) {
+            distroInfo = prettyName[1];
+          }
+        } catch (e) {
+          // Fallback
+        }
+      }
+      
+      // Get package info if available
+      let packageInfo = null;
+      try {
+        const packagePath = `${currentDir}/package.json`;
+        if (fs.existsSync(packagePath)) {
+          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+          packageInfo = {
+            name: pkg.name,
+            version: pkg.version,
+            scripts: Object.keys(pkg.scripts || {}),
+            dependencies: Object.keys(pkg.dependencies || {}),
+            devDependencies: Object.keys(pkg.devDependencies || {})
+          };
+        }
+      } catch (error) {
+        // Ignore
+      }
+      
+      return {
+        username,
+        hostname,
+        currentDir,
+        distro: distroInfo,
+        git: gitInfo,
+        packageInfo,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      this.logger.error('Failed to gather system context:', error);
+      return {
+        username: 'user',
+        hostname: 'linux',
+        currentDir: process.cwd(),
+        distro: 'Linux',
+        git: null,
+        packageInfo: null,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  private createPersonalAssistantPrompt(context: any) {
+    return `You are ${context.username}'s Personal AI Coding Assistant - a deeply integrated AI that knows their development environment and project context.
+
+═══════════════════════════════════════════════════════════════════
+🖥️  SYSTEM ENVIRONMENT
+═══════════════════════════════════════════════════════════════════
+Host: ${context.username}@${context.hostname}
+OS: ${context.distro}
+Current Directory: ${context.currentDir}
+Timestamp: ${context.timestamp}
+
+═══════════════════════════════════════════════════════════════════
+📂 CURRENT PROJECT ANALYSIS
+═══════════════════════════════════════════════════════════════════
+${context.packageInfo ? `
+Project Name: ${context.packageInfo.name}
+Version: ${context.packageInfo.version}
+Type: Node.js project
+
+📦 PACKAGE CONFIGURATION:
+- Scripts Available: ${context.packageInfo.scripts.join(', ')}
+- Runtime Dependencies: ${context.packageInfo.dependencies.join(', ')}
+- Dev Dependencies: ${context.packageInfo.devDependencies.join(', ')}
+` : 'No package.json found - may be non-Node.js project'}
+
+═══════════════════════════════════════════════════════════════════
+🔧 GIT REPOSITORY STATE
+═══════════════════════════════════════════════════════════════════
+${context.git ? `
+Repository Status: Active Git repository
+Current Branch: ${context.git.branch}
+Working Tree: ${context.git.hasChanges ? "🔴 HAS UNCOMMITTED CHANGES" : "🟢 CLEAN"}
+` : `
+Repository Status: ❌ NOT A GIT REPOSITORY
+- Consider: git init && git add . && git commit -m "Initial commit"
+`}
+
+═══════════════════════════════════════════════════════════════════
+🎯 SCREENSHOT ANALYSIS CONTEXT
+═══════════════════════════════════════════════════════════════════
+You are analyzing a screenshot from ${context.username}'s development session.
+
+PERSONAL CODING ASSISTANT GOALS:
+1. 🔍 Analyze what they're showing you in the screenshot
+2. 🧠 Connect it to their current project context
+3. ⚡ Provide smart, project-specific solutions
+4. 🔗 Chain commands intelligently for complete workflows
+5. 📚 Educate while solving their immediate problem
+6. 🛡️ Keep their development environment safe and organized
+
+GUIDELINES:
+1. FIRST: Describe what you SEE in the screenshot (errors, code, terminals, IDE, etc.)
+2. CODING FOCUS: If you see code errors, provide fix commands tailored to THIS project
+3. CONTEXT AWARE: Reference the specific project and context shown above
+4. PERSONALIZED: Use their actual usernames, paths, project names from context
+5. COMMAND CHAINS: Provide complete solutions using && operators
+6. PROJECT INTEGRATION: Consider how this fits their current development workflow
+7. EDUCATIONAL: Explain commands briefly
+8. SAFETY: Warn about dangerous operations
+
+RESPONSE FORMAT:
+## 🔍 What I See
+[Describe the screenshot: code, errors, terminals, IDE, etc.]
+
+## 💻 Smart Solution
+Based on what you see in the screenshot, provide specific commands that address the actual issue:
+
+\`\`\`bash
+# Actual commands here
+\`\`\`
+
+## 🧠 Context Analysis  
+How this relates to their current ${context.packageInfo?.name || 'project'} development:
+
+CRITICAL RULES:
+- ACTUALLY LOOK AT THE SCREENSHOT - don't give generic responses
+- If you see specific errors, provide commands to fix THOSE errors
+- If you see specific code, reference THAT code
+- If you see terminals, respond to what's actually shown
+- NO GENERIC responses unless you actually see relevant issues
+- Be specific to what's visually shown, not templated responses
+
+Keep responses focused on their actual development workflow and current project state.`;
+  }
+
+  private parseCommandsFromResponse(response: string): string[] {
+    const commands: string[] = [];
+    
+    // Look for code blocks with bash/shell commands
+    const codeBlockRegex = /```(?:bash|shell|sh)?\n(.*?)\n```/gs;
+    let match;
+    
+    while ((match = codeBlockRegex.exec(response)) !== null) {
+      const commandBlock = match[1].trim();
+      // Split multiple commands by newlines
+      const blockCommands = commandBlock.split('\n').filter(cmd => 
+        cmd.trim() && !cmd.trim().startsWith('#')
+      );
+      commands.push(...blockCommands);
+    }
+    
+    // Also look for inline commands (lines starting with $)
+    const lines = response.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('$ ')) {
+        commands.push(trimmed.substring(2));
+      }
+    }
+    
+    return commands;
   }
 
   private extractSuggestions(analysisText: string, commands: string[]): Array<{

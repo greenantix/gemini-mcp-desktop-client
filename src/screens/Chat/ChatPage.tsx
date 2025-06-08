@@ -163,6 +163,30 @@ export default function ChatPage() {
     }
   };
 
+  // Handle messages from Linux Helper (F10 screenshots)
+  const handleLinuxHelperMessage = async (
+    message: string,
+    screenshot?: string,
+    screenshotMeta?: { filename: string; size: number }
+  ) => {
+    // Convert screenshot data URL to File object if present
+    const files: File[] = [];
+    if (screenshot && screenshotMeta) {
+      try {
+        // Convert data URL to blob then to File
+        const response = await fetch(screenshot);
+        const blob = await response.blob();
+        const file = new File([blob], screenshotMeta.filename, { type: 'image/png' });
+        files.push(file);
+      } catch (error) {
+        console.error('Failed to convert screenshot to file:', error);
+      }
+    }
+    
+    // Send to chat using existing message submit handler
+    await handleMessageSubmit(message, files);
+  };
+
   const handleMessageSubmit = async (
     text: string,
     files: File[],

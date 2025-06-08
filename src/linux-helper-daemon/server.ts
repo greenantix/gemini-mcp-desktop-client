@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { Logger } from './logger';
 
 export interface DaemonMessage {
-  type: 'ping' | 'status' | 'capture' | 'execute' | 'shutdown';
+  type: 'ping' | 'status' | 'capture' | 'execute' | 'shutdown' | 'trigger-hotkey' | 'get-analysis';
   payload?: any;
 }
 

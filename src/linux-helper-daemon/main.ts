@@ -2,9 +2,9 @@
 
 import { HotkeyManager } from './hotkey-manager';
 import { ScreenshotManager } from './screenshot';
-import { PopupManager } from './popup-window';
 import { DaemonServer } from './server';
 import { Logger } from './logger';
+import { PopupController } from './popup-controller';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -22,7 +22,7 @@ class LinuxHelperDaemon {
   private config: DaemonConfig;
   private hotkeyManager: HotkeyManager;
   private screenshotManager: ScreenshotManager;
-  private popupManager: PopupManager;
+  private popupController: PopupController;
   private server: DaemonServer;
   private logger: Logger;
   private isRunning = false;
@@ -33,7 +33,7 @@ class LinuxHelperDaemon {
     
     this.hotkeyManager = new HotkeyManager(this.config.hotkey, this.logger);
     this.screenshotManager = new ScreenshotManager(this.logger);
-    this.popupManager = new PopupManager(this.config.popupTheme, this.logger);
+    this.popupController = new PopupController(this.logger);
     this.server = new DaemonServer(this.config.port, this.config.socketPath, this.logger);
     
     this.setupEventHandlers();
@@ -72,25 +72,21 @@ class LinuxHelperDaemon {
         const screenshot = await this.screenshotManager.captureActiveMonitor();
         if (screenshot) {
           // Show popup immediately
-          await this.popupManager.showLoadingState();
+          await this.popupController.showLoadingState();
           
-          // Analyze screenshot (this will be implemented later)
+          // Analyze screenshot
           const analysis = await this.analyzeScreenshot(screenshot.dataUrl);
           
           // Update popup with results
-          await this.popupManager.showResults(analysis);
+          await this.popupController.showResults(analysis);
         }
       } catch (error) {
         this.logger.error('Failed to handle hotkey press:', error);
-        await this.popupManager.showError('Screenshot capture failed');
+        await this.popupController.showError('Screenshot capture failed');
       }
     });
 
-    // Handle popup interactions
-    this.popupManager.onCommand((command: string) => {
-      this.logger.info('Executing command:', command);
-      // Execute command logic will be implemented later
-    });
+    // Handle popup interactions will be implemented via IPC
 
     // Handle graceful shutdown
     process.on('SIGINT', () => this.shutdown());
@@ -141,7 +137,7 @@ class LinuxHelperDaemon {
       await this.hotkeyManager.register();
       
       // Initialize popup system
-      await this.popupManager.initialize();
+      await this.popupController.initialize();
       
       this.isRunning = true;
       this.logger.info(`Linux Helper Daemon started successfully`);
@@ -164,7 +160,7 @@ class LinuxHelperDaemon {
     
     try {
       await this.hotkeyManager.unregister();
-      await this.popupManager.cleanup();
+      await this.popupController.cleanup();
       await this.server.stop();
       
       this.isRunning = false;

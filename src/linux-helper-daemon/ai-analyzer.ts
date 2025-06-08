@@ -59,19 +59,13 @@ export class AIAnalyzer {
   }
 
   private async importLinuxHelper() {
-    // Dynamic import to avoid Electron dependencies in daemon
-    try {
-      // We need to resolve the path relative to the daemon
-      const linuxHelperPath = '../utils/linuxHelper';
-      return await import(linuxHelperPath);
-    } catch (error) {
-      // Fallback: create a standalone version
-      this.logger.warn('Could not import existing Linux Helper, using fallback');
-      return this.createFallbackAnalyzer();
-    }
+    // For Phase 1, we'll use a standalone version to avoid Electron dependencies
+    // Later phases will implement proper communication with the main app
+    this.logger.info('Using standalone AI analyzer (Phase 1 implementation)');
+    return this.createStandaloneAnalyzer();
   }
 
-  private createFallbackAnalyzer() {
+  private createStandaloneAnalyzer() {
     // Simplified version of the analysis functionality
     return {
       analyzeScreenshotWithLinuxHelper: async (screenshotDataUrl: string, settings?: any) => {

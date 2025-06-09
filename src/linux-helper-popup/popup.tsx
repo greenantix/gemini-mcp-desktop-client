@@ -13,42 +13,33 @@ if (window.electron) {
   // Handle screenshot display from main process
   window.electron.ipcRenderer.on('display-screenshot', (_event, screenshotDataUrl) => {
     console.log('📸 Received screenshot for display:', screenshotDataUrl?.substring(0, 50) + '...');
-    // TODO: Trigger AI analysis with the screenshot
+    
+    // Show the screenshot in the popup with quick action buttons
     window.dispatchEvent(new CustomEvent('popup-state-update', { 
       detail: { 
-        status: 'loading',
-        title: 'Analyzing Screenshot...',
-        content: 'AI is analyzing your screen capture'
+        status: 'ready',
+        title: 'Screenshot Captured',
+        content: 'Choose a quick action',
+        screenshot: screenshotDataUrl,
+        suggestions: [
+          {
+            title: 'Explain This',
+            command: 'analyze-explain',
+            description: 'Get AI explanation of what you see'
+          },
+          {
+            title: 'Copy Text',
+            command: 'extract-text',
+            description: 'Extract and copy any text from image'
+          },
+          {
+            title: 'Quick Fix',
+            command: 'suggest-fix',
+            description: 'Get suggestions for improvements'
+          }
+        ]
       } 
     }));
-    
-    // Simulate analysis completion (in real implementation, this would call AI service)
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('popup-state-update', { 
-        detail: { 
-          status: 'success',
-          title: 'Analysis Complete',
-          content: 'Found potential improvements in your code',
-          suggestions: [
-            {
-              title: 'Fix Linting Issues',
-              command: 'npm run lint:fix',
-              description: 'Automatically fix code style issues'
-            },
-            {
-              title: 'Run Tests',
-              command: 'npm test',
-              description: 'Execute test suite to verify changes'
-            },
-            {
-              title: 'Commit Changes',
-              command: 'git add . && git commit -m "fix: lint and format"',
-              description: 'Stage and commit your fixes'
-            }
-          ]
-        } 
-      }));
-    }, 2000);
   });
 }
 

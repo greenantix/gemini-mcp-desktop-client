@@ -90,50 +90,26 @@ export class ScreenshotManager {
   private async captureWithTool(tool: string, filepath: string): Promise<void> {
     let command: string;
     
-    // Try to detect active monitor for multi-monitor setups
-    const activeMonitor = this.getActiveMonitorInfo();
-    
     switch (tool) {
       case 'gnome-screenshot':
-        // GNOME Screenshot - use window selection to avoid multi-monitor capture
-        if (activeMonitor) {
-          // Use area selection with specific coordinates for active monitor
-          command = `gnome-screenshot -a -f "${filepath}" && sleep 0.1`;
-          // Unfortunately gnome-screenshot -a requires user interaction
-          // Fall back to full desktop for now, but crop afterwards if needed
-        }
+        // GNOME Screenshot (most common on Ubuntu/Pop!_OS)
         command = `gnome-screenshot -f "${filepath}"`;
         break;
         
       case 'import':
-        // ImageMagick import - can specify display coordinates
-        if (activeMonitor) {
-          const { x, y, width, height } = activeMonitor;
-          command = `import -window root -crop ${width}x${height}+${x}+${y} "${filepath}"`;
-        } else {
-          command = `import -window root "${filepath}"`;
-        }
+        // ImageMagick import (part of ImageMagick suite)
+        command = `import -window root "${filepath}"`;
         break;
         
       case 'scrot':
-        // Scrot - can use area selection
-        if (activeMonitor) {
-          const { x, y, width, height } = activeMonitor;
-          command = `scrot -a ${x},${y},${width},${height} "${filepath}"`;
-        } else {
-          command = `scrot "${filepath}"`;
-        }
+        // Scrot (lightweight screenshot utility)
+        command = `scrot "${filepath}"`;
         break;
         
       case 'xwd':
         // X Window Dump (convert to PNG afterwards)
         const xwdFile = filepath.replace('.png', '.xwd');
-        if (activeMonitor) {
-          const { x, y, width, height } = activeMonitor;
-          command = `xwd -root -out "${xwdFile}" && convert "${xwdFile}" -crop ${width}x${height}+${x}+${y} "${filepath}" && rm "${xwdFile}"`;
-        } else {
-          command = `xwd -root -out "${xwdFile}" && convert "${xwdFile}" "${filepath}" && rm "${xwdFile}"`;
-        }
+        command = `xwd -root -out "${xwdFile}" && convert "${xwdFile}" "${filepath}" && rm "${xwdFile}"`;
         break;
         
       default:
@@ -207,55 +183,6 @@ export class ScreenshotManager {
     }
   }
 
-  private getActiveMonitorInfo(): { x: number; y: number; width: number; height: number } | null {
-    try {
-      // Use xrandr to get monitor information
-      const xrandrOutput = execSync('xrandr --query', { encoding: 'utf8' });
-      const cursorOutput = execSync('xdotool getmouselocation --shell', { encoding: 'utf8' });
-      
-      // Parse cursor position
-      const cursorMatch = cursorOutput.match(/X=(\d+)\nY=(\d+)/);
-      if (!cursorMatch) {
-        this.logger.warn('Could not detect cursor position');
-        return null;
-      }
-      
-      const cursorX = parseInt(cursorMatch[1]);
-      const cursorY = parseInt(cursorMatch[2]);
-      
-      // Parse xrandr output to find monitor containing cursor
-      const lines = xrandrOutput.split('\n');
-      for (const line of lines) {
-        // Look for connected displays with resolution and position
-        const match = line.match(/^(\S+)\s+connected\s+(?:primary\s+)?(\d+)x(\d+)\+(\d+)\+(\d+)/);
-        if (match) {
-          const [, displayName, width, height, x, y] = match;
-          const monitorX = parseInt(x);
-          const monitorY = parseInt(y);
-          const monitorWidth = parseInt(width);
-          const monitorHeight = parseInt(height);
-          
-          // Check if cursor is within this monitor's bounds
-          if (cursorX >= monitorX && cursorX < monitorX + monitorWidth &&
-              cursorY >= monitorY && cursorY < monitorY + monitorHeight) {
-            this.logger.debug(`Active monitor detected: ${displayName} (${monitorWidth}x${monitorHeight}+${monitorX}+${monitorY})`);
-            return {
-              x: monitorX,
-              y: monitorY,
-              width: monitorWidth,
-              height: monitorHeight
-            };
-          }
-        }
-      }
-      
-      this.logger.warn('Could not determine active monitor, falling back to full desktop');
-      return null;
-    } catch (error) {
-      this.logger.error('Error detecting active monitor:', error);
-      return null;
-    }
-  }
 
   getScreenshotDirectory(): string {
     return this.screenshotDir;

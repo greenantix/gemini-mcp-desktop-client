@@ -169,7 +169,7 @@ function createPopupWindow(cursorPosition: { x: number; y: number }): BrowserWin
     x: popupX,
     y: popupY,
     frame: false,
-    transparent: false, // Make it non-transparent for now to debug
+    transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
@@ -630,16 +630,8 @@ ipcMain.handle("linux-helper-get-system-context", async () => {
 // Handle manual Linux Helper trigger from UI button
 ipcMain.on("manual-linux-helper-trigger", async () => {
   console.log("📱 Manual Linux Helper trigger received");
-  
-  // Simulate daemon hotkey press
-  const screenshotData = await captureActiveMonitorScreenshot();
-  if (screenshotData) {
-    const payload: HotkeyPressPayload = {
-      screenshotDataUrl: screenshotData.dataUrl,
-      cursorPosition: { x: 100, y: 100 } // Default position for manual trigger
-    };
-    handleLinuxHelperHotkey(payload);
-  }
+  console.log("⚠️ Manual trigger should use daemon for screenshot capture, not main process");
+  console.log("💡 Please use the configured hotkey instead for proper screenshot capture");
 });
 
 // Popup IPC handlers
@@ -892,4 +884,33 @@ ipcMain.handle("paste-at-cursor", async (_, command: string) => {
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
+
+ipcMain.handle("focus-main-window", async () => {
+  try {
+    if (win && !win.isDestroyed()) {
+      win.focus();
+      win.show();
+      console.log('🔍 Focused main window');
+      return { success: true };
+    }
+    return { success: false, error: 'Main window not available' };
+  } catch (error) {
+    console.error("Failed to focus main window:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+ipcMain.handle("copy-screenshot-path", async () => {
+  try {
+    const { clipboard } = await import('electron');
+    const screenshotDir = ensureScreenshotDirectoryWithSettings();
+    clipboard.writeText(screenshotDir);
+    console.log('📋 Screenshot folder path copied to clipboard');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to copy screenshot path:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
 

@@ -15,7 +15,6 @@ export declare class ScreenshotManager {
     private detectScreenshotTool;
     private captureWithTool;
     captureRegion(x: number, y: number, width: number, height: number): Promise<ScreenshotResult | null>;
-    private getActiveMonitorInfo;
     getScreenshotDirectory(): string;
     cleanupOldScreenshots(maxAge?: number): Promise<void>;
 }

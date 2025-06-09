@@ -7,10 +7,14 @@ declare class LinuxHelperDaemon {
     private isRunning;
     private socketClient?;
     private hotkeyProcess?;
+    private isConnectingOrConnected;
     constructor();
     private loadConfig;
     private setupEventHandlers;
     private setupMouseButtonMonitoring;
+    private hasXbindkeys;
+    private startXbindkeysMouseMonitoring;
+    private setupButtonServer;
     private getButtonMapping;
     private startMouseMonitoring;
     private connectToMainProcess;

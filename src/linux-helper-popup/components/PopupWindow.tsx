@@ -10,8 +10,7 @@ import {
   AlertCircle,
   Lightbulb,
   Code2,
-  Mic,
-  Volume2
+  Mic
 } from 'lucide-react';
 
 // Types
@@ -34,51 +33,13 @@ interface PopupPosition {
   y: number;
 }
 
-// Mock data for demonstration
-const mockStates: { [key: string]: PopupState } = {
-  loading: {
-    status: 'loading',
-    title: 'Analyzing screenshot...',
-    content: 'Processing your screen capture with AI'
-  },
-  success: {
-    status: 'success',
-    title: 'TypeScript Error Detected',
-    content: 'Missing semicolon on line 42',
-    commands: ['npm run lint:fix', 'git add . && git commit -m "fix: add missing semicolon"'],
-    suggestions: [
-      {
-        title: 'Quick Fix',
-        command: 'npm run lint:fix',
-        description: 'Auto-fix linting errors'
-      },
-      {
-        title: 'Fix & Commit',
-        command: 'npm run lint:fix && git add . && git commit -m "fix: linting"',
-        description: 'Fix and commit changes'
-      },
-      {
-        title: 'Run Tests',
-        command: 'npm test -- --watch',
-        description: 'Verify fix with tests'
-      }
-    ]
-  },
-  error: {
-    status: 'error',
-    title: 'Analysis Failed',
-    content: 'Could not connect to AI service',
-    error: 'Please check your API key configuration'
-  },
-  voice: {
-    status: 'voice-listening',
-    title: 'Listening...',
-    content: 'Say your command'
-  }
-};
 
 const PopupWindow: React.FC = () => {
-  const [state, setState] = useState<PopupState>(mockStates.loading);
+  const [state, setState] = useState<PopupState>({
+    status: 'loading',
+    title: 'Initializing...',
+    content: 'Please wait'
+  });
   const [isPinned, setIsPinned] = useState(false);
   const [selectedCommand, setSelectedCommand] = useState<number>(0);
   const [showCopied, setShowCopied] = useState(false);
@@ -90,14 +51,26 @@ const PopupWindow: React.FC = () => {
   // Handle external state updates
   useEffect(() => {
     const handleStateUpdate = (event: CustomEvent<PopupState>) => {
+      const newState = event.detail;
+
+      // Reset selected command when new suggestions arrive
+      if (newState.suggestions?.length) {
+        setSelectedCommand(0);
+      }
+
       setState(prevState => ({
         ...prevState,
-        ...event.detail
+        ...newState
       }));
 
+      // Log errors for debugging
+      if (newState.status === 'error') {
+        console.error('Popup error:', newState.error);
+      }
+
       // Auto-execute first command if requested
-      if (event.detail.executeFirst && event.detail.suggestions?.length) {
-        handleExecuteCommand(event.detail.suggestions[0].command);
+      if (newState.executeFirst && newState.suggestions?.length) {
+        handleExecuteCommand(newState.suggestions[0].command);
       }
     };
 
@@ -108,12 +81,7 @@ const PopupWindow: React.FC = () => {
   }, []);
 
   // Simulate state changes for demo
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setState(mockStates.success);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Remove mock data simulation to allow real analysis results
 
   // Keyboard navigation
   useEffect(() => {

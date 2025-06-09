@@ -9,6 +9,7 @@ import {
   dialog,
   desktopCapturer,
   session,
+  globalShortcut,
 } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -17,6 +18,7 @@ import * as net from "net";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { startServer } from "../src/backend/server.ts";
+import { setWindowReferences } from "../src/backend/routes/helperAction/helperAction.ts";
 import fixPath from "fix-path";
 // const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -46,7 +48,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let win: BrowserWindow;
 let popupWin: BrowserWindow | null = null;
 let daemonSocketServer: net.Server | null = null;
-let connectedDaemonSockets: Set<net.Socket> = new Set();
+const connectedDaemonSockets: Set<net.Socket> = new Set();
 
 // Linux Helper Tool State
 interface LinuxHelperState {
@@ -175,9 +177,26 @@ function createPopupWindow(cursorPosition: { x: number; y: number }): BrowserWin
     if (popupWin && !popupWin.isDestroyed()) {
       popupWin.close();
       popupWin = null;
-    }
-  }, 30000);
+    }  }, 30000);
 
+  return popupWin;
+}
+
+// Wrapper function for backend API
+function showHelperPopupWrapper(x: number, y: number, screenshotDataUrl: string): void {
+  console.log(`🔧 showHelperPopupWrapper called at position: ${x}, ${y}`);
+  const popup = createPopupWindow({ x, y });
+  
+  // Send screenshot to popup for quick actions
+  if (screenshotDataUrl) {
+    popup.webContents.once('did-finish-load', () => {
+      popup.webContents.send('display-screenshot', screenshotDataUrl);
+    });
+  }
+}
+
+// Get current popup window
+function getPopupWindowWrapper(): BrowserWindow | null {
   return popupWin;
 }
 
@@ -194,6 +213,11 @@ function handleLinuxHelperHotkey(payload: HotkeyPressPayload) {
   });
   
   // Action B: Send to main chat window for analysis
+  console.log('🔍 Sending screenshot to main window for analysis');
+  console.log('📋 Main window ready state:', win.webContents.isLoading() ? 'loading' : 'ready');
+  console.log('📊 Screenshot data size:', payload.screenshotDataUrl?.length || 0, 'bytes');
+  console.log('📋 Screenshot data type:', typeof payload.screenshotDataUrl);
+  console.log('📋 Screenshot data preview:', payload.screenshotDataUrl?.substring(0, 50) + '...');
   win.webContents.send('analyze-screenshot', payload.screenshotDataUrl);
   
   console.log(`📍 Popup created at position: ${payload.cursorPosition.x}, ${payload.cursorPosition.y}`);
@@ -299,19 +323,33 @@ function setupDaemonSocketServer(): void {
     // Add socket to our tracking set
     connectedDaemonSockets.add(socket);
     
+    let messageBuffer = '';
+    
     socket.on('data', (data) => {
       try {
-        const messages = data.toString().split('\n').filter(msg => msg.trim());
+        messageBuffer += data.toString();
+        
+        // Check if we have complete messages (ending with \n)
+        const messages = messageBuffer.split('\n');
+        messageBuffer = messages.pop() || ''; // Keep incomplete message in buffer
         
         for (const message of messages) {
-          const { event, data: eventData } = JSON.parse(message);
-          
-          if (event === 'hotkey-pressed') {
-            handleLinuxHelperHotkey(eventData as HotkeyPressPayload);
+          if (message.trim()) {
+            try {
+              const { event, data: eventData } = JSON.parse(message);
+              
+              if (event === 'hotkey-pressed') {
+                handleLinuxHelperHotkey(eventData as HotkeyPressPayload);
+              }
+            } catch (parseError) {
+              console.error('Error parsing individual message:', parseError);
+              console.error('Message length:', message.length);
+              console.error('Message preview:', message.substring(0, 100) + '...');
+            }
           }
         }
       } catch (error) {
-        console.error('Error parsing daemon message:', error);
+        console.error('Error handling daemon data:', error);
       }
     });
     
@@ -352,6 +390,9 @@ app.on("window-all-closed", () => {
 app.on("will-quit", () => {
   // Clean up socket connections and server
   cleanupSocketConnections();
+  
+  // Unregister global shortcuts
+  globalShortcut.unregisterAll();
 });
 
 function cleanupSocketConnections(): void {
@@ -401,10 +442,24 @@ app.whenReady().then(async () => {
   setupDaemonSocketServer();
   
   console.log(`🚀 Linux Helper hotkey (${currentSettings.hotkey}) handled by daemon`);
-  
-  await checkAndRequestMicrophonePermission();
+    await checkAndRequestMicrophonePermission();
   startServer();
+  
+  // Inject window references into the helper action route
+  setWindowReferences(
+    () => win,
+    getPopupWindowWrapper,
+    showHelperPopupWrapper
+  );
+  console.log("🔧 Window references injected into helper action route");
+  
   createWindow();
+  
+  // Test IPC after window loads
+  setTimeout(() => {
+    console.log('🧪 Sending test IPC message to React');
+    win.webContents.send('test-ipc-message', 'Hello from Electron!');
+  }, 3000);
 });
 ipcMain.handle("get-info", async () => {
   return app.getPath("home");

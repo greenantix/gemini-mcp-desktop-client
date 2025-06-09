@@ -1,16 +1,43 @@
 import * as http from 'http';
 import * as net from 'net';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import { Logger } from './logger';
+import { AIAnalyzer } from './ai-analyzer';
+
+interface MessagePayload {
+  command?: string;
+  screenshotDataUrl?: string;
+  cursorPosition?: { x: number; y: number };
+}
+
+interface ServerResponse {
+  output?: string;
+  analysis?: {
+    summary: string;
+    suggestions: Array<{
+      title: string;
+      command: string;
+      description: string;
+    }>;
+    commands: string[];
+  };
+  message?: string;
+  status?: {
+    running: boolean;
+    uptime: number;
+    pid: number;
+  };
+}
 
 export interface DaemonMessage {
   type: 'ping' | 'status' | 'capture' | 'execute' | 'shutdown' | 'trigger-hotkey' | 'get-analysis';
-  payload?: any;
+  payload?: MessagePayload;
 }
 
 export interface DaemonResponse {
   success: boolean;
-  data?: any;
+  data?: ServerResponse;
   error?: string;
 }
 
@@ -19,12 +46,25 @@ export class DaemonServer {
   private socketServer?: net.Server;
   private isRunning = false;
   private hotkeyCallback?: () => Promise<void>;
+  private aiAnalyzer: AIAnalyzer;
+
+  private async handleScreenshotAnalysis(screenshotDataUrl: string) {
+    try {
+      const analysis = await this.aiAnalyzer.analyzeScreenshot(screenshotDataUrl);
+      return analysis;
+    } catch (error) {
+      this.logger.error('Screenshot analysis failed:', error);
+      throw error;
+    }
+  }
 
   constructor(
     private port: number,
     private socketPath: string,
     private logger: Logger
-  ) {}
+  ) {
+    this.aiAnalyzer = new AIAnalyzer(logger);
+  }
 
   setHotkeyCallback(callback: () => Promise<void>): void {
     this.hotkeyCallback = callback;
@@ -87,9 +127,11 @@ export class DaemonServer {
           const statusResponse: DaemonResponse = {
             success: true,
             data: {
-              running: this.isRunning,
-              uptime: process.uptime(),
-              pid: process.pid
+              status: {
+                running: this.isRunning,
+                uptime: process.uptime(),
+                pid: process.pid
+              }
             }
           };
           
@@ -156,15 +198,31 @@ export class DaemonServer {
     try {
       switch (message.type) {
         case 'ping':
-          return { success: true, data: 'pong' };
+          return { success: true, data: { message: 'pong' } };
+
+        case 'get-analysis':
+          if (!message.payload?.screenshotDataUrl) {
+            return { success: false, error: 'No screenshot data provided' };
+          }
+          try {
+            const analysis = await this.handleScreenshotAnalysis(message.payload.screenshotDataUrl);
+            return { success: true, data: { analysis } };
+          } catch (error) {
+            return {
+              success: false,
+              error: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+          }
           
         case 'status':
           return {
             success: true,
             data: {
-              running: this.isRunning,
-              uptime: process.uptime(),
-              pid: process.pid
+              status: {
+                running: this.isRunning,
+                uptime: process.uptime(),
+                pid: process.pid
+              }
             }
           };
           
@@ -173,7 +231,7 @@ export class DaemonServer {
           if (this.hotkeyCallback) {
             try {
               await this.hotkeyCallback();
-              return { success: true, data: 'Screenshot capture initiated' };
+              return { success: true, data: { message: 'Screenshot capture initiated' } };
             } catch (error) {
               return { 
                 success: false, 
@@ -185,17 +243,24 @@ export class DaemonServer {
           }
           
         case 'execute':
-          // Execute command
           if (!message.payload?.command) {
             return { success: false, error: 'No command provided' };
           }
-          // Command execution will be implemented later
-          return { success: true, data: `Command executed: ${message.payload.command}` };
+          
+          try {
+            const result = execSync(message.payload.command, { encoding: 'utf-8' });
+            return { success: true, data: { output: result } };
+          } catch (error) {
+            return {
+              success: false,
+              error: `Command execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+          }
           
         case 'shutdown':
           // Graceful shutdown
           setTimeout(() => process.exit(0), 100);
-          return { success: true, data: 'Shutdown initiated' };
+          return { success: true, data: { message: 'Shutdown initiated' } };
           
         default:
           return { success: false, error: `Unknown message type: ${message.type}` };

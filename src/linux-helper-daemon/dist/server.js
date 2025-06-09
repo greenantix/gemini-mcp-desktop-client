@@ -37,12 +37,25 @@ exports.DaemonServer = void 0;
 const http = __importStar(require("http"));
 const net = __importStar(require("net"));
 const fs = __importStar(require("fs"));
+const child_process_1 = require("child_process");
+const ai_analyzer_1 = require("./ai-analyzer");
 class DaemonServer {
+    async handleScreenshotAnalysis(screenshotDataUrl) {
+        try {
+            const analysis = await this.aiAnalyzer.analyzeScreenshot(screenshotDataUrl);
+            return analysis;
+        }
+        catch (error) {
+            this.logger.error('Screenshot analysis failed:', error);
+            throw error;
+        }
+    }
     constructor(port, socketPath, logger) {
         this.port = port;
         this.socketPath = socketPath;
         this.logger = logger;
         this.isRunning = false;
+        this.aiAnalyzer = new ai_analyzer_1.AIAnalyzer(logger);
     }
     setHotkeyCallback(callback) {
         this.hotkeyCallback = callback;
@@ -99,9 +112,11 @@ class DaemonServer {
                     const statusResponse = {
                         success: true,
                         data: {
-                            running: this.isRunning,
-                            uptime: process.uptime(),
-                            pid: process.pid
+                            status: {
+                                running: this.isRunning,
+                                uptime: process.uptime(),
+                                pid: process.pid
+                            }
                         }
                     };
                     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -158,14 +173,30 @@ class DaemonServer {
         try {
             switch (message.type) {
                 case 'ping':
-                    return { success: true, data: 'pong' };
+                    return { success: true, data: { message: 'pong' } };
+                case 'get-analysis':
+                    if (!message.payload?.screenshotDataUrl) {
+                        return { success: false, error: 'No screenshot data provided' };
+                    }
+                    try {
+                        const analysis = await this.handleScreenshotAnalysis(message.payload.screenshotDataUrl);
+                        return { success: true, data: { analysis } };
+                    }
+                    catch (error) {
+                        return {
+                            success: false,
+                            error: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        };
+                    }
                 case 'status':
                     return {
                         success: true,
                         data: {
-                            running: this.isRunning,
-                            uptime: process.uptime(),
-                            pid: process.pid
+                            status: {
+                                running: this.isRunning,
+                                uptime: process.uptime(),
+                                pid: process.pid
+                            }
                         }
                     };
                 case 'capture':
@@ -173,7 +204,7 @@ class DaemonServer {
                     if (this.hotkeyCallback) {
                         try {
                             await this.hotkeyCallback();
-                            return { success: true, data: 'Screenshot capture initiated' };
+                            return { success: true, data: { message: 'Screenshot capture initiated' } };
                         }
                         catch (error) {
                             return {
@@ -186,16 +217,23 @@ class DaemonServer {
                         return { success: false, error: 'Hotkey callback not registered' };
                     }
                 case 'execute':
-                    // Execute command
                     if (!message.payload?.command) {
                         return { success: false, error: 'No command provided' };
                     }
-                    // Command execution will be implemented later
-                    return { success: true, data: `Command executed: ${message.payload.command}` };
+                    try {
+                        const result = (0, child_process_1.execSync)(message.payload.command, { encoding: 'utf-8' });
+                        return { success: true, data: { output: result } };
+                    }
+                    catch (error) {
+                        return {
+                            success: false,
+                            error: `Command execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        };
+                    }
                 case 'shutdown':
                     // Graceful shutdown
                     setTimeout(() => process.exit(0), 100);
-                    return { success: true, data: 'Shutdown initiated' };
+                    return { success: true, data: { message: 'Shutdown initiated' } };
                 default:
                     return { success: false, error: `Unknown message type: ${message.type}` };
             }

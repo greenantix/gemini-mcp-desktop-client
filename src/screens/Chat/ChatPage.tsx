@@ -25,6 +25,7 @@ export default function ChatPage() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const handleMessageSubmitRef = useRef<any>(null);
   const navigate = useNavigate();
 
   const toggleDrawer = () => {
@@ -49,6 +50,7 @@ export default function ChatPage() {
     checkServerConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const scrollToBottom = () => {
     if (listContainerRef.current) {
@@ -175,6 +177,8 @@ export default function ChatPage() {
     files: File[],
     webSearch?: boolean
   ) => {
+    // Store the latest version in ref for IPC handlers
+    handleMessageSubmitRef.current = handleMessageSubmit;
     const trimmedText = text.trim();
     if (!trimmedText && files.length === 0) return;
 
@@ -314,6 +318,48 @@ export default function ChatPage() {
       setIsLoading(false);
     }
   };
+
+  // Listen for screenshot analysis requests from Linux Helper (must be after handleMessageSubmit definition)
+  useEffect(() => {
+    console.log('🎯 Setting up IPC listener for screenshot analysis');
+    console.log('🔍 Window object available:', typeof window !== 'undefined');
+    console.log('🔍 Electron object:', typeof window.electron);
+    console.log('🔍 IpcRenderer object:', typeof window.electron?.ipcRenderer);
+    console.log('🔍 Available window properties:', Object.keys(window).filter(k => k.includes('electron') || k.includes('ipc') || k.includes('api')));
+    if (typeof window !== 'undefined' && window.ipcRenderer) {
+      const handleAnalyzeScreenshot = (screenshotDataUrl: string) => {
+        console.log('📸 Received screenshot for analysis, data length:', screenshotDataUrl?.length);
+        try {
+          // Create a file from the base64 data
+          const byteCharacters = atob(screenshotDataUrl.split(',')[1]);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const file = new File([byteArray], 'screenshot.png', { type: 'image/png' });
+          
+          console.log('🚀 Sending screenshot for analysis via handleMessageSubmit');
+          // Send screenshot for analysis
+          if (handleMessageSubmitRef.current) {
+            handleMessageSubmitRef.current('Please analyze this screenshot and tell me what you see.', [file]);
+          }
+        } catch (error) {
+          console.error('❌ Error processing screenshot:', error);
+        }
+      };
+      
+      console.log('📡 Registering IPC listener for analyze-screenshot');
+      window.ipcRenderer.on('analyze-screenshot', handleAnalyzeScreenshot);
+      
+      return () => {
+        console.log('🧹 Cleaning up IPC listener');
+        window.ipcRenderer.removeListener('analyze-screenshot', handleAnalyzeScreenshot);
+      };
+    } else {
+      console.warn('⚠️ Electron IPC not available for screenshot analysis');
+    }
+  }, []); // Empty dependency array - set up listener only once
 
   return (
     <Box

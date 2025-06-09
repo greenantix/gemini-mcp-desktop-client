@@ -5,6 +5,7 @@
 # --- Configuration ---
 ROOT_DIR=$(pwd)
 DAEMON_DIR="$ROOT_DIR/src/linux-helper-daemon"
+DAEMON_PID_FILE="/tmp/linux-helper-daemon.lock" # Standardized PID file location
 DAEMON_LOG_FILE="$ROOT_DIR/daemon.log"
 APP_LOG_FILE="$ROOT_DIR/app.log"
 RED='\033[0;31m'
@@ -42,8 +43,30 @@ cleanup() {
 # Trap Ctrl+C to run the cleanup function
 trap cleanup INT TERM
 
+# --- Environment Setup ---
+# Check for Gemini API key
+if [ -f ".env" ]; then
+    source .env
+    if [ -z "$GEMINI_API_KEY" ]; then
+        print_warning "No GEMINI_API_KEY found in .env file."
+        print_warning "Screenshot analysis may not work properly."
+    else
+        print_status "Found Gemini API key in .env file."
+        export GEMINI_API_KEY
+    fi
+else
+    print_warning "No .env file found. Creating from example..."
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        print_warning "Please edit .env and add your Gemini API key."
+    else
+        print_error "No .env.example file found!"
+        exit 1
+    fi
+fi
+
 # --- Main Script ---
-print_status "🚀 Starting Linux Helper - Pop!_OS Assistant"
+print_status "🚀 Starting Linux Helper - AI Screenshot Assistant"
 echo "================================================="
 
 # 1. Stop any lingering processes first
@@ -52,8 +75,46 @@ print_status "Performing initial cleanup..."
 print_success "Cleanup complete."
 echo ""
 
+# Check for screenshot dependencies
+print_status "Checking screenshot dependencies..."
+MISSING_DEPS=""
+
+# Check for gnome-screenshot
+if ! command -v gnome-screenshot &> /dev/null; then
+    if ! command -v import &> /dev/null && ! command -v scrot &> /dev/null; then
+        MISSING_DEPS="gnome-screenshot/imagemagick/scrot"
+    fi
+fi
+
+if [ ! -z "$MISSING_DEPS" ]; then
+    print_error "Missing required screenshot tools: $MISSING_DEPS"
+    print_error "Please install one of the following:"
+    echo "   - gnome-screenshot (recommended)"
+    echo "   - imagemagick"
+    echo "   - scrot"
+    exit 1
+else
+    print_success "Screenshot dependencies verified."
+fi
+
+echo ""
+
 # 2. Prepare and start the Linux Helper Daemon
 print_status "Preparing the background hotkey daemon..."
+
+# Check if daemon is already running using PID file
+if [ -f "$DAEMON_PID_FILE" ]; then
+    EXISTING_PID=$(cat "$DAEMON_PID_FILE")
+    if [ -n "$EXISTING_PID" ] && ps -p "$EXISTING_PID" > /dev/null; then
+        print_warning "Daemon is already running with PID $EXISTING_PID (according to $DAEMON_PID_FILE)."
+        print_warning "If this is an error, run './stop.sh' and try again."
+        exit 1
+    else
+        print_warning "Stale PID file found ($DAEMON_PID_FILE for PID $EXISTING_PID). Removing it."
+        rm -f "$DAEMON_PID_FILE"
+    fi
+fi
+
 if [ ! -d "$DAEMON_DIR" ]; then
     print_error "Daemon directory not found at: $DAEMON_DIR"
     exit 1
@@ -64,15 +125,22 @@ cd "$DAEMON_DIR"
 # Install daemon dependencies if needed
 if [ ! -d "node_modules" ]; then
     print_status "Installing daemon dependencies (one-time setup)..."
-    npm install
+    npm install --silent # Keep output cleaner
+    if [ $? -ne 0 ]; then
+        print_error "Daemon 'npm install' failed."
+        cd "$ROOT_DIR"
+        exit 1
+    fi
+    print_success "Daemon dependencies installed."
 fi
 
-# Build the daemon if sources are newer than the build
-if [ ! -f "dist/main.js" ] || find . -name "*.ts" -newer "dist/main.js" | grep -q .; then
-    print_status "Daemon source has changed, rebuilding..."
+# Build the daemon if sources are newer than the build or if dist/main.js doesn't exist
+if [ ! -f "dist/main.js" ] || find . -maxdepth 1 -name "*.ts" -newer "dist/main.js" 2>/dev/null | grep -q .; then
+    print_status "Daemon source has changed or build is missing, rebuilding..."
     npm run build
     if [ $? -ne 0 ]; then
-        print_error "Daemon build failed! Please check for errors."
+        print_error "Daemon build failed! Please check for errors in '$DAEMON_DIR'."
+        cd "$ROOT_DIR"
         exit 1
     fi
     print_success "Daemon built successfully."
@@ -82,17 +150,33 @@ fi
 
 # Start the daemon in the background
 print_status "Starting the hotkey daemon in the background..."
-nohup node dist/main.js > "$DAEMON_LOG_FILE" 2>&1 &
-DAEMON_PID=$!
-sleep 2 # Give it a moment to initialize
+# Ensure the daemon creates its own PID file now
+# Set DISPLAY if not already set
+export DISPLAY="${DISPLAY:-:0}"
+print_status "Using DISPLAY=$DISPLAY"
 
-# Verify daemon is running
-if ps -p $DAEMON_PID > /dev/null; then
-    print_success "Hotkey daemon is running (PID: $DAEMON_PID). Logs are in daemon.log"
+# Start the daemon with environment variables
+GEMINI_API_KEY="$GEMINI_API_KEY" DISPLAY="$DISPLAY" nohup node dist/main.js > "$DAEMON_LOG_FILE" 2>&1 &
+# We don't capture DAEMON_PID here anymore, as the daemon manages its own PID file.
+# We will check the PID file for success.
+sleep 3 # Give it a moment to initialize and create the PID file
+
+# Verify daemon is running by checking the PID file it's supposed to create
+if [ -f "$DAEMON_PID_FILE" ]; then
+    DAEMON_PID_FROM_FILE=$(cat "$DAEMON_PID_FILE")
+    if [ -n "$DAEMON_PID_FROM_FILE" ] && ps -p "$DAEMON_PID_FROM_FILE" > /dev/null; then
+        print_success "Hotkey daemon started successfully (PID: $DAEMON_PID_FROM_FILE). Logs: $DAEMON_LOG_FILE"
+    else
+        print_error "Daemon started but PID $DAEMON_PID_FROM_FILE from $DAEMON_PID_FILE is not running. Check $DAEMON_LOG_FILE."
+        cd "$ROOT_DIR"
+        exit 1
+    fi
 else
-    print_error "Failed to start the hotkey daemon. Check daemon.log for errors."
+    print_error "Failed to start the hotkey daemon or it did not create PID file $DAEMON_PID_FILE. Check $DAEMON_LOG_FILE."
+    cd "$ROOT_DIR"
     exit 1
 fi
+cd "$ROOT_DIR" # Go back to root directory
 echo ""
 
 # 3. Prepare and start the Main Application
@@ -116,11 +200,29 @@ print_success "🎉 Linux Helper is now running!"
 echo ""
 echo "   - Main application window should appear shortly."
 echo "   - Hotkey daemon is listening in the background."
-echo "   - Press the 'Forward Mouse Button' to trigger the AI Helper."
+echo "   - Press the 'Forward Mouse Button' to capture and analyze screenshots."
+echo "   - If you haven't already, add your Gemini API key to .env file."
+echo ""
+echo "📋 Troubleshooting Guide:"
+echo "   1. Screenshot not working?"
+echo "      - Check DISPLAY environment variable (current: $DISPLAY)"
+echo "      - Verify screenshot tools: gnome-screenshot, import, or scrot"
+echo "      - Check daemon logs for capture errors"
+echo ""
+echo "   2. Analysis not working?"
+echo "      - Verify Gemini API key in .env file"
+echo "      - Look for 'Analysis failed' in daemon logs"
+echo "      - Try restarting with './stop.sh && ./start.sh'"
+echo ""
+echo "   3. Popup issues?"
+echo "      - Check main app logs for window creation errors"
+echo "      - Verify X11 permissions with 'xhost +'"
+echo "      - Look for 'state-update' events in logs"
 echo ""
 echo "   LOGS:"
 echo "   - Main App: tail -f $APP_LOG_FILE"
 echo "   - Daemon:   tail -f $DAEMON_LOG_FILE"
+echo "   - Analysis: tail -f $DAEMON_LOG_FILE | grep 'Analysis'"
 echo ""
 echo "   Press Ctrl+C in this terminal to stop everything."
 echo "================================================="

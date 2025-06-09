@@ -13,7 +13,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Roboto', sans-serif;
       background: transparent;
       overflow: hidden;
       -webkit-app-region: no-drag;
@@ -23,18 +23,18 @@
 
     /* Main popup container */
     .popup-container {
-      width: 350px;
-      min-height: 200px;
-      background: #2d2d2d;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-      border: 1px solid #444;
-      color: #ffffff;
+      width: 380px;
+      min-height: 220px;
+      background: #333130; /* Pop!_OS dark charcoal */
+      border-radius: 8px; /* Pop!_OS style borders */
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.3);
+      border: 1px solid #5A5A5A; /* Pop!_OS border color */
+      color: #F6F6F6; /* Pop!_OS off-white text */
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.5;
       overflow: hidden;
       position: relative;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(16px);
     }
 
     /* Header */
@@ -42,9 +42,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      background: linear-gradient(135deg, #3a3a3a, #2d2d2d);
-      border-bottom: 1px solid #444;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #3D3D3D, #333130); /* Pop!_OS paper to background gradient */
+      border-bottom: 1px solid #5A5A5A; /* Pop!_OS border */
       -webkit-app-region: drag;
     }
 
@@ -57,10 +57,10 @@
     }
 
     .close-btn {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #ff5f57;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px; /* Pop!_OS style borders */
+      background: #F15D22; /* Pop!_OS destruction red */
       border: none;
       color: white;
       font-size: 12px;
@@ -69,11 +69,12 @@
       align-items: center;
       justify-content: center;
       -webkit-app-region: no-drag;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease;
     }
 
     .close-btn:hover {
-      background: #ff3b30;
+      background: #E04A0F;
+      transform: scale(1.05);
     }
 
     /* Content area */
@@ -111,7 +112,7 @@
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #4CAF50, #81C784);
+      background: linear-gradient(90deg, #FAA41A, #FFB13D); /* Pop!_OS orange gradient */
       border-radius: 3px;
       transition: width 0.3s ease;
       position: relative;
@@ -158,10 +159,11 @@
 
     /* Quick fix section */
     .quick-fix {
-      background: #363636;
-      border-radius: 8px;
-      padding: 12px;
+      background: #3D3D3D; /* Pop!_OS paper color */
+      border-radius: 6px; /* Pop!_OS style borders */
+      padding: 14px;
       margin-bottom: 16px;
+      border: 1px solid #5A5A5A; /* Pop!_OS border */
     }
 
     .quick-fix-title {
@@ -173,22 +175,23 @@
     }
 
     .command-box {
-      background: #1e1e1e;
-      border: 1px solid #555;
+      background: #2A2A2A;
+      border: 1px solid #5A5A5A;
       border-radius: 6px;
-      padding: 10px 12px;
-      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      padding: 12px 14px;
+      font-family: 'Fira Code', 'SF Mono', 'Monaco', 'Consolas', monospace;
       font-size: 13px;
-      color: #4CAF50;
+      color: #73C48F; /* Pop!_OS suggestion green */
       margin-bottom: 12px;
       word-break: break-all;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease;
     }
 
     .command-box:hover {
-      background: #252525;
-      border-color: #666;
+      background: #333130;
+      border-color: #FAA41A; /* Pop!_OS orange border on hover */
+      box-shadow: 0 2px 8px rgba(250, 164, 26, 0.2);
     }
 
     /* Action buttons */
@@ -212,31 +215,40 @@
     }
 
     .btn-primary {
-      background: #007AFF;
-      color: white;
+      background: #FAA41A; /* Pop!_OS orange */
+      color: #000000; /* Black text on orange */
+      font-weight: 500;
     }
 
     .btn-primary:hover {
-      background: #0056CC;
+      background: #CC7900; /* Pop!_OS darker orange */
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(250, 164, 26, 0.3);
     }
 
     .btn-secondary {
-      background: #444;
-      color: #ccc;
+      background: #4A4A4A; /* Pop!_OS surface color */
+      color: #F6F6F6;
+      border: 1px solid #5A5A5A;
     }
 
     .btn-secondary:hover {
-      background: #555;
-      color: white;
+      background: #5A5A5A;
+      border-color: #48B9C7; /* Pop!_OS teal border */
+      color: #48B9C7;
+      transform: translateY(-1px);
     }
 
     .btn-success {
-      background: #4CAF50;
-      color: white;
+      background: #73C48F; /* Pop!_OS suggestion green */
+      color: #000000; /* Black text on green */
+      font-weight: 500;
     }
 
     .btn-success:hover {
-      background: #45a049;
+      background: #5DB36E;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(115, 196, 143, 0.3);
     }
 
     .pin-btn {
@@ -264,15 +276,15 @@
     }
 
     .pin-btn.pinned {
-      background: #007AFF;
-      color: white;
-      border-color: #007AFF;
+      background: #48B9C7; /* Pop!_OS teal */
+      color: #000000;
+      border-color: #48B9C7;
     }
 
     /* Error state */
     .error-container {
-      padding: 16px;
-      color: #ff6b6b;
+      padding: 18px;
+      color: #F15D22; /* Pop!_OS destruction red */
       text-align: center;
     }
 
@@ -287,18 +299,20 @@
     }
 
     .suggestion-item {
-      background: #363636;
+      background: #3D3D3D; /* Pop!_OS paper color */
       border-radius: 6px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
       cursor: pointer;
-      transition: background-color 0.2s;
-      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      border: 1px solid #5A5A5A;
     }
 
     .suggestion-item:hover {
-      background: #404040;
-      border-color: #555;
+      background: #4A4A4A;
+      border-color: #48B9C7; /* Pop!_OS teal border */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(72, 185, 199, 0.2);
     }
 
     .suggestion-title {
@@ -312,13 +326,14 @@
     }
 
     .suggestion-command {
-      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-family: 'Fira Code', 'SF Mono', 'Monaco', 'Consolas', monospace;
       font-size: 11px;
-      color: #4CAF50;
-      margin-top: 6px;
-      background: #1e1e1e;
-      padding: 4px 6px;
-      border-radius: 3px;
+      color: #73C48F; /* Pop!_OS suggestion green */
+      margin-top: 8px;
+      background: #2A2A2A;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #5A5A5A;
     }
 
     /* Animations */

@@ -9,7 +9,6 @@ import {
   dialog,
   desktopCapturer,
   session,
-  globalShortcut,
 } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -50,18 +49,7 @@ let popupWin: BrowserWindow | null = null;
 let daemonSocketServer: net.Server | null = null;
 const connectedDaemonSockets: Set<net.Socket> = new Set();
 
-// Linux Helper Tool State
-interface LinuxHelperState {
-  isWaitingForSecondHotkey: boolean;
-  lastScreenshot: string | null;
-  lastSuggestions: string | null;
-}
-
-const helperState: LinuxHelperState = {
-  isWaitingForSecondHotkey: false,
-  lastScreenshot: null,
-  lastSuggestions: null,
-};
+// Linux Helper Tool State (removed unused helperState variable)
 
 interface HotkeyPressPayload {
   screenshotDataUrl: string;
@@ -151,13 +139,37 @@ function createPopupWindow(cursorPosition: { x: number; y: number }): BrowserWin
     popupWin.close();
   }
 
+  // Get screen bounds for the display containing the cursor
+  const displayNearCursor = screen.getDisplayNearestPoint(cursorPosition);
+  const { x: displayX, y: displayY, width: screenWidth, height: screenHeight } = displayNearCursor.workArea;
+  
+  // Calculate popup position, ensuring it stays on the correct screen near cursor
+  const popupWidth = 400;
+  const popupHeight = 300;
+  let popupX = cursorPosition.x + 20; // Closer to cursor
+  let popupY = cursorPosition.y + 20; // Closer to cursor
+  
+  // Ensure popup stays within the screen bounds
+  if (popupX + popupWidth > displayX + screenWidth) {
+    popupX = cursorPosition.x - popupWidth - 20; // Show to the left of cursor
+  }
+  if (popupY + popupHeight > displayY + screenHeight) {
+    popupY = cursorPosition.y - popupHeight - 20; // Show above cursor
+  }
+  
+  // Final bounds check
+  popupX = Math.max(displayX + 10, Math.min(popupX, displayX + screenWidth - popupWidth - 10));
+  popupY = Math.max(displayY + 10, Math.min(popupY, displayY + screenHeight - popupHeight - 10));
+  
+  console.log(`🖥️ Display: ${displayX},${displayY} ${screenWidth}x${screenHeight}, Cursor: ${cursorPosition.x},${cursorPosition.y}, Popup: ${popupX},${popupY}`);
+
   popupWin = new BrowserWindow({
-    width: 400,
-    height: 300,
-    x: cursorPosition.x + 10,
-    y: cursorPosition.y + 10,
+    width: popupWidth,
+    height: popupHeight,
+    x: popupX,
+    y: popupY,
     frame: false,
-    transparent: true,
+    transparent: false, // Make it non-transparent for now to debug
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
@@ -202,25 +214,58 @@ function getPopupWindowWrapper(): BrowserWindow | null {
 
 // Linux Helper hotkey handler (called from daemon via socket)
 function handleLinuxHelperHotkey(payload: HotkeyPressPayload) {
-  console.log("🔥 Linux Helper activated via daemon");
-  
-  // Action A: Create popup at cursor position
-  const popup = createPopupWindow(payload.cursorPosition);
-  
-  // Send screenshot to popup for quick actions
-  popup.webContents.once('did-finish-load', () => {
-    popup.webContents.send('display-screenshot', payload.screenshotDataUrl);
-  });
-  
-  // Action B: Send to main chat window for analysis
-  console.log('🔍 Sending screenshot to main window for analysis');
-  console.log('📋 Main window ready state:', win.webContents.isLoading() ? 'loading' : 'ready');
-  console.log('📊 Screenshot data size:', payload.screenshotDataUrl?.length || 0, 'bytes');
-  console.log('📋 Screenshot data type:', typeof payload.screenshotDataUrl);
-  console.log('📋 Screenshot data preview:', payload.screenshotDataUrl?.substring(0, 50) + '...');
-  win.webContents.send('analyze-screenshot', payload.screenshotDataUrl);
-  
-  console.log(`📍 Popup created at position: ${payload.cursorPosition.x}, ${payload.cursorPosition.y}`);
+  try {
+    console.log("🔥 Linux Helper activated via daemon");
+    
+    if (!payload.screenshotDataUrl || !payload.cursorPosition) {
+      throw new Error('Invalid payload: missing screenshot or cursor position');
+    }
+    
+    // Action A: Create popup at cursor position
+    const popup = createPopupWindow(payload.cursorPosition);
+    
+    // Send screenshot to popup for quick actions
+    popup.webContents.once('did-finish-load', () => {
+      try {
+        popup.webContents.send('display-screenshot', payload.screenshotDataUrl);
+        console.log('📸 Screenshot sent to popup successfully');
+      } catch (error) {
+        console.error('❌ Failed to send screenshot to popup:', error);
+      }
+    });
+    
+    // Handle popup load errors
+    popup.webContents.once('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error('❌ Popup failed to load:', { errorCode, errorDescription });
+    });
+    
+    // Action B: Send to main chat window for analysis
+    console.log('🔍 Sending screenshot to main window for analysis');
+    console.log('📋 Main window ready state:', win.webContents.isLoading() ? 'loading' : 'ready');
+    console.log('📊 Screenshot data size:', payload.screenshotDataUrl?.length || 0, 'bytes');
+    
+    if (win && !win.isDestroyed()) {
+      try {
+        // Send to LinuxHelper component via the expected event name
+        win.webContents.send('linux-helper-screenshot', {
+          screenshot: payload.screenshotDataUrl,
+          filename: 'helper-screenshot.png',
+          filepath: '/tmp/helper-screenshot.png',
+          size: payload.screenshotDataUrl.length,
+          action: 'analyze'
+        });
+        console.log('📡 Screenshot analysis request sent to main window');
+      } catch (error) {
+        console.error('❌ Failed to send screenshot to main window:', error);
+      }
+    } else {
+      console.error('❌ Main window not available for screenshot analysis');
+    }
+    
+    console.log(`📍 Popup created at position: ${payload.cursorPosition.x}, ${payload.cursorPosition.y}`);
+  } catch (error) {
+    console.error('❌ Error in handleLinuxHelperHotkey:', error);
+  }
 }
 
 async function checkAndRequestMicrophonePermission(): Promise<boolean> {
@@ -336,31 +381,50 @@ function setupDaemonSocketServer(): void {
         for (const message of messages) {
           if (message.trim()) {
             try {
-              const { event, data: eventData } = JSON.parse(message);
+              const parsed = JSON.parse(message);
+              const { event, data: eventData } = parsed;
+              
+              console.log(`📨 Received daemon event: ${event}`);
               
               if (event === 'hotkey-pressed') {
+                if (!eventData || typeof eventData !== 'object') {
+                  throw new Error('Invalid hotkey-pressed event data');
+                }
                 handleLinuxHelperHotkey(eventData as HotkeyPressPayload);
+              } else {
+                console.warn(`⚠️ Unknown daemon event: ${event}`);
               }
             } catch (parseError) {
-              console.error('Error parsing individual message:', parseError);
-              console.error('Message length:', message.length);
-              console.error('Message preview:', message.substring(0, 100) + '...');
+              console.error('❌ Error parsing daemon message:', parseError);
+              console.error('📄 Message length:', message.length);
+              console.error('📄 Message preview:', message.substring(0, 100) + '...');
+              console.error('📄 Raw message bytes:', Array.from(Buffer.from(message, 'utf8')).slice(0, 20));
             }
           }
         }
       } catch (error) {
-        console.error('Error handling daemon data:', error);
+        console.error('❌ Error handling daemon data stream:', error);
+        console.error('📊 Buffer state:', { bufferLength: messageBuffer.length, dataLength: data.length });
       }
     });
     
     socket.on('error', (error) => {
-      console.error('Daemon socket error:', error);
+      console.error('❌ Daemon socket error:', error);
+      console.error('🔍 Error details:', {
+        code: (error as any).code,
+        errno: (error as any).errno,
+        syscall: (error as any).syscall,
+        message: error.message
+      });
       // Remove from tracking set on error
       connectedDaemonSockets.delete(socket);
     });
     
-    socket.on('close', () => {
-      console.log('🔌 Daemon disconnected');
+    socket.on('close', (hadError) => {
+      console.log(`🔌 Daemon disconnected (hadError: ${hadError})`);
+      if (hadError) {
+        console.warn('⚠️ Daemon connection closed due to error');
+      }
       // Remove from tracking set when disconnected
       connectedDaemonSockets.delete(socket);
     });
@@ -371,7 +435,28 @@ function setupDaemonSocketServer(): void {
   });
   
   daemonSocketServer.on('error', (error) => {
-    console.error('Socket server error:', error);
+    console.error('❌ Socket server error:', error);
+    console.error('🔍 Server error details:', {
+      code: (error as any).code,
+      errno: (error as any).errno,
+      syscall: (error as any).syscall,
+      address: (error as any).address,
+      port: (error as any).port,
+      path: (error as any).path
+    });
+    
+    // Try to recover from common errors
+    if ((error as any).code === 'EADDRINUSE') {
+      console.log('🔄 Socket address in use, attempting cleanup...');
+      if (fs.existsSync(socketPath)) {
+        try {
+          fs.unlinkSync(socketPath);
+          console.log('🧹 Cleaned up stale socket file');
+        } catch (cleanupError) {
+          console.error('❌ Failed to cleanup socket file:', cleanupError);
+        }
+      }
+    }
   });
 }
 
@@ -390,9 +475,6 @@ app.on("window-all-closed", () => {
 app.on("will-quit", () => {
   // Clean up socket connections and server
   cleanupSocketConnections();
-  
-  // Unregister global shortcuts
-  globalShortcut.unregisterAll();
 });
 
 function cleanupSocketConnections(): void {
@@ -557,6 +639,54 @@ ipcMain.on("manual-linux-helper-trigger", async () => {
       cursorPosition: { x: 100, y: 100 } // Default position for manual trigger
     };
     handleLinuxHelperHotkey(payload);
+  }
+});
+
+// Popup IPC handlers
+ipcMain.handle("popup-close", async () => {
+  if (popupWin && !popupWin.isDestroyed()) {
+    popupWin.close();
+    popupWin = null;
+  }
+  return { success: true };
+});
+
+ipcMain.handle("popup-execute-command", async (_, command: string) => {
+  try {
+    console.log(`🔧 Executing popup command: ${command}`);
+    
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
+    const execAsync = promisify(exec);
+    
+    const result = await execAsync(command, { 
+      timeout: 30000,
+      maxBuffer: 1024 * 1024 
+    });
+    
+    return {
+      success: true,
+      stdout: result.stdout,
+      stderr: result.stderr
+    };
+  } catch (error) {
+    console.error("Failed to execute popup command:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+});
+
+ipcMain.handle("popup-copy-command", async (_, command: string) => {
+  try {
+    const { clipboard } = await import('electron');
+    clipboard.writeText(command);
+    console.log(`📋 Popup command copied to clipboard: ${command}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to copy command:", error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 

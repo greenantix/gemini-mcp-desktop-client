@@ -1,5 +1,4 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-import { deepPurple, grey, orange } from '@mui/material/colors';
 
 // Official Pop!_OS Dark Theme Colors
 const primaryColor = '#FAA41A'; // Official Pop!_OS orange (light theme variant)

@@ -1,12 +1,8 @@
 import { app } from "electron";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 const isDev = process.env.NODE_ENV === "development";
-// Convert `import.meta.url` to a file path
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const configPath = isDev
   ? "/home/greenantix/AI/gemini-mcp-desktop-client/static/serverConfig.json" // Fixed path for development

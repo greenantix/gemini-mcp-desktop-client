@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -34,460 +33,213 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LinuxHelperDaemon = void 0;
-const screenshot_1 = require("./screenshot");
-const logger_1 = require("./logger");
-const cursor_tracker_1 = require("./cursor-tracker");
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
-const os = __importStar(require("os"));
-const net = __importStar(require("net"));
 const child_process_1 = require("child_process");
+const fs = __importStar(require("fs"));
+const net = __importStar(require("net"));
+const screenshot_1 = require("./screenshot");
+const cursor_tracker_1 = require("./cursor-tracker");
+const logger_1 = require("./logger");
+// --- Singleton Pattern ---
+let instance = null;
 class LinuxHelperDaemon {
     constructor() {
         this.isRunning = false;
-        this.isConnectingOrConnected = false;
-        this.config = this.loadConfig();
-        this.logger = new logger_1.Logger(this.config.logLevel);
-        this.logger.debug(`Initial daemon environment: DISPLAY=${process.env.DISPLAY}, XAUTHORITY=${process.env.XAUTHORITY}`);
+        this.hotkeyProcess = null;
+        this.socketServer = null;
+        this.clientSocket = null;
+        // Load config, initialize managers etc.
+        const config = this.loadConfig();
+        this.logger = new logger_1.Logger(config.logLevel);
         this.screenshotManager = new screenshot_1.ScreenshotManager(this.logger);
         this.cursorTracker = new cursor_tracker_1.CursorTracker(this.logger);
-        this.setupEventHandlers();
+        this.socketPath = config.socketPath;
+        this.hotkey = config.hotkey;
+        this.lockFilePath = '/tmp/linux-helper-daemon.lock';
+        this.setupProcessHandlers();
+    }
+    static getInstance() {
+        if (!instance) {
+            instance = new LinuxHelperDaemon();
+        }
+        return instance;
     }
     loadConfig() {
-        const configPath = path.join(os.homedir(), '.config', 'linux-helper', 'daemon.json');
-        const defaultConfig = {
+        // Simplified config loading
+        return {
             socketPath: '/tmp/linux-helper.sock',
             logLevel: 'info',
-            hotkey: 'ForwardButton',
-            autoStart: true
+            hotkey: 'ForwardButton', // Default hotkey
         };
-        let loadedConfig = defaultConfig;
-        try {
-            if (fs.existsSync(configPath)) {
-                const configData = fs.readFileSync(configPath, 'utf8');
-                loadedConfig = { ...defaultConfig, ...JSON.parse(configData) };
-            }
-        }
-        catch (error) {
-            // Logger is not available here yet, so use console for critical config load errors.
-            console.warn('Failed to load config, using defaults:', error);
-        }
-        // this.logger.debug line moved to constructor
-        return loadedConfig;
     }
-    setupEventHandlers() {
-        // Create the hotkey handler function
-        const hotkeyHandler = async () => {
-            this.logger.info('Hotkey pressed, capturing screenshot and cursor position');
-            try {
-                // Get cursor position
-                const cursorPosition = await this.cursorTracker.getCurrentPosition();
-                this.logger.debug(`Cursor position: ${cursorPosition.x}, ${cursorPosition.y}`);
-                // Capture screenshot
-                const screenshot = await this.screenshotManager.captureActiveMonitor();
-                if (screenshot) {
-                    const payload = {
-                        screenshotDataUrl: screenshot.dataUrl,
-                        cursorPosition
-                    };
-                    // Send to main Electron process via socket
-                    this.sendToMainProcess('hotkey-pressed', payload);
-                }
-            }
-            catch (error) {
-                this.logger.error('Failed to handle hotkey press:', error);
-            }
-        };
-        // Set up mouse button monitoring if hotkey is a mouse button
-        this.setupMouseButtonMonitoring(hotkeyHandler);
-        // Handle graceful shutdown
-        process.on('SIGINT', () => this.shutdown());
-        process.on('SIGTERM', () => this.shutdown());
-    }
-    setupMouseButtonMonitoring(hotkeyHandler) {
-        const buttonMapping = this.getButtonMapping(this.config.hotkey);
-        if (buttonMapping.type === 'mouse' && buttonMapping.button !== undefined) {
-            // Try xbindkeys first for better compatibility
-            if (this.hasXbindkeys()) {
-                this.startXbindkeysMouseMonitoring(buttonMapping.button, hotkeyHandler);
-            }
-            else {
-                this.startMouseMonitoring(buttonMapping.button, hotkeyHandler);
-            }
-        }
-        else {
-            this.logger.warn(`Hotkey ${this.config.hotkey} is not a supported mouse button`);
-        }
-    }
-    hasXbindkeys() {
-        try {
-            const { execSync } = require('child_process');
-            execSync('which xbindkeys', { stdio: 'ignore' });
-            return true;
-        }
-        catch {
+    acquireLock() {
+        if (fs.existsSync(this.lockFilePath)) {
+            this.logger.error('Lock file exists. Another instance may be running.');
             return false;
         }
+        fs.writeFileSync(this.lockFilePath, process.pid.toString());
+        return true;
     }
-    startXbindkeysMouseMonitoring(button, callback) {
-        this.logger.info(`Starting xbindkeys mouse button monitoring for button ${button}`);
-        try {
-            const tempScriptPath = '/tmp/linux-helper-hotkey.sh';
-            const scriptContent = `#!/bin/bash
-# Mouse button callback script
-echo "$(date): Mouse button ${button} pressed" >> /tmp/linux-helper-debug.log
-curl -X POST http://localhost:3847/mouse-button-pressed -d '{"button":${button}}' -H "Content-Type: application/json" > /dev/null 2>&1 || echo "$(date): Failed to send button press" >> /tmp/linux-helper-debug.log
-`;
-            require('fs').writeFileSync(tempScriptPath, scriptContent);
-            require('fs').chmodSync(tempScriptPath, '755');
-            // Create xbindkeys config for mouse button
-            const xbindkeysConfig = `"${tempScriptPath}"
-    b:${button}`;
-            const configPath = '/tmp/.xbindkeysrc.linux-helper';
-            require('fs').writeFileSync(configPath, xbindkeysConfig);
-            // Start xbindkeys with our config
-            this.hotkeyProcess = (0, child_process_1.spawn)('xbindkeys', ['-f', configPath, '-n'], {
-                detached: false,
-                stdio: ['ignore', 'pipe', 'pipe']
-            });
-            this.hotkeyProcess.on('error', (error) => {
-                this.logger.error('Failed to start xbindkeys:', error.message);
-                // Fallback to xinput
-                this.startMouseMonitoring(button, callback);
-            });
-            this.hotkeyProcess.on('exit', (code) => {
-                this.logger.warn(`xbindkeys process exited with code ${code}`);
-                if (this.isRunning && code !== 0) {
-                    this.logger.info('Restarting xbindkeys monitoring in 3 seconds...');
-                    setTimeout(() => {
-                        if (this.isRunning) {
-                            this.startXbindkeysMouseMonitoring(button, callback);
-                        }
-                    }, 3000);
-                }
-            });
-            // Set up HTTP server to receive button press notifications
-            this.setupButtonServer(callback);
-        }
-        catch (error) {
-            this.logger.error('Error setting up xbindkeys mouse monitoring:', error);
-            // Fallback to xinput
-            this.startMouseMonitoring(button, callback);
-        }
-    }
-    setupButtonServer(callback) {
-        const http = require('http');
-        const server = http.createServer((req, res) => {
-            if (req.method === 'POST' && req.url === '/mouse-button-pressed') {
-                this.logger.debug('Mouse button press received via HTTP');
-                callback().catch(error => {
-                    this.logger.error('Error in button callback:', error);
-                });
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end('{"status":"ok"}');
-            }
-            else {
-                res.writeHead(404);
-                res.end();
-            }
-        });
-        server.listen(3847, '127.0.0.1', () => {
-            this.logger.info('Button server listening on port 3847');
-        });
-    }
-    getButtonMapping(hotkey) {
-        const mouseButtons = {
-            'MiddleClick': 2,
-            'Button1': 1,
-            'Button2': 2,
-            'Button3': 3,
-            'Button4': 4,
-            'Button5': 5,
-            'Button8': 8,
-            'Button9': 9,
-            'LeftClick': 1,
-            'RightClick': 3,
-            'ForwardButton': 9,
-            'BackButton': 8
-        };
-        if (mouseButtons[hotkey]) {
-            return { type: 'mouse', button: mouseButtons[hotkey] };
-        }
-        else {
-            return { type: 'keyboard', key: hotkey };
-        }
-    }
-    startMouseMonitoring(button, callback) {
-        this.logger.info(`Starting mouse button monitoring for button ${button}`);
-        try {
-            const xinputCommand = 'xinput';
-            const xinputArgs = ['test-xi2', '--root'];
-            // Determine DISPLAY value
-            const displayEnv = process.env.DISPLAY || ':0'; // Default to :0 if not set
-            const xAuthorityEnv = process.env.XAUTHORITY;
-            this.logger.debug(`Spawning xinput. Current daemon env: DISPLAY=${process.env.DISPLAY}, XAUTHORITY=${xAuthorityEnv}. Using for spawn: DISPLAY=${displayEnv}, XAUTHORITY=${xAuthorityEnv || 'not set'}`);
-            const spawnEnv = { ...process.env, 'DISPLAY': displayEnv };
-            if (xAuthorityEnv) {
-                spawnEnv['XAUTHORITY'] = xAuthorityEnv;
-            }
-            this.hotkeyProcess = (0, child_process_1.spawn)(xinputCommand, xinputArgs, {
-                stdio: ['ignore', 'pipe', 'pipe'],
-                env: spawnEnv
-            });
-            let lastEventTime = 0;
-            const debounceMs = 500;
-            this.hotkeyProcess.stdout?.on('data', (data) => {
-                const output = data.toString();
-                const lines = output.split('\n');
-                for (const line of lines) {
-                    if (line.includes('ButtonPress') && line.includes(`detail: ${button}`)) {
-                        const now = Date.now();
-                        if (now - lastEventTime > debounceMs) {
-                            lastEventTime = now;
-                            this.logger.debug(`Mouse button ${button} pressed (event line: "${line.trim()}")`);
-                            callback().catch(error => {
-                                this.logger.error('Error in hotkey callback:', error);
-                            });
-                        }
-                    }
-                }
-            });
-            this.hotkeyProcess.stderr?.on('data', (data) => {
-                const errorOutput = data.toString().trim();
-                if (errorOutput) { // Only log if there's actual error output
-                    this.logger.error(`Mouse monitoring process stderr: ${errorOutput}`);
-                    // If xinput fails, try to restart it
-                    if (errorOutput.includes('BadAccess') || errorOutput.includes('Cannot open display') || errorOutput.includes('Unable to connect')) {
-                        this.logger.warn('xinput access/display issue, retrying in 5 seconds...');
-                        setTimeout(() => {
-                            if (this.isRunning) {
-                                this.startMouseMonitoring(button, callback);
-                            }
-                        }, 5000);
-                    }
-                }
-            });
-            this.hotkeyProcess.on('exit', (code, signal) => {
-                this.logger.warn(`Mouse monitoring process exited with code ${code} and signal ${signal}`);
-                // Restart monitoring if the daemon is still running and it wasn't a clean exit
-                if (this.isRunning && (code !== 0 || signal !== null)) {
-                    this.logger.info('Restarting mouse monitoring in 3 seconds due to non-clean exit...');
-                    setTimeout(() => {
-                        if (this.isRunning) {
-                            this.startMouseMonitoring(button, callback);
-                        }
-                    }, 3000);
-                }
-            });
-            this.hotkeyProcess.on('error', (error) => {
-                this.logger.error('Failed to start or error in xinput process:', error.message);
-                // Consider a retry here as well, similar to 'exit'
-                if (this.isRunning) {
-                    this.logger.info('Attempting to restart mouse monitoring due to spawn error in 3 seconds...');
-                    setTimeout(() => {
-                        if (this.isRunning) {
-                            this.startMouseMonitoring(button, callback);
-                        }
-                    }, 3000);
-                }
-            });
-        }
-        catch (error) {
-            if (error instanceof Error) {
-                this.logger.error('Synchronous error during setup of mouse monitoring:', error.message);
-            }
-            else {
-                this.logger.error('Synchronous error during setup of mouse monitoring (unknown type):', error);
-            }
-        }
-    }
-    connectToMainProcess() {
-        if (this.isConnectingOrConnected && this.socketClient && this.socketClient.writable) {
-            this.logger.debug('Already connected or attempting to connect to main process. Skipping new attempt.');
-            return;
-        }
-        this.logger.debug(`Attempting to connect to main process via socket: ${this.config.socketPath}`);
-        this.isConnectingOrConnected = true; // Set flag before attempting
-        // Clear previous listeners to avoid duplicates if this is a retry
-        if (this.socketClient) {
-            this.socketClient.removeAllListeners();
-            this.socketClient.destroy(); // Ensure old socket is fully closed
-        }
-        this.socketClient = net.createConnection({ path: this.config.socketPath }, () => {
-            this.logger.info('Successfully connected to main Electron process socket.');
-            // this.isConnectingOrConnected is already true
-        });
-        this.socketClient.on('data', (data) => {
-            try {
-                const messages = data.toString().split('\n').filter(msg => msg.trim());
-                for (const message of messages) {
-                    const { event, data: eventData } = JSON.parse(message);
-                    if (event === 'update-hotkey') {
-                        this.updateHotkey(eventData.hotkey);
-                    }
-                }
-            }
-            catch (error) {
-                if (error instanceof Error) {
-                    this.logger.error('Error parsing main process message:', error.message);
-                }
-                else {
-                    this.logger.error('Error parsing main process message (unknown type):', error);
-                }
-            }
-        });
-        this.socketClient.on('error', (error) => {
-            this.logger.warn(`Socket connection error: ${error.message} (Code: ${error.code})`);
-            this.isConnectingOrConnected = false; // Reset flag on error
-            this.socketClient?.destroy(); // Clean up the problematic socket
-            this.socketClient = undefined;
-            this.logger.info('Retrying socket connection in 5 seconds...');
-            setTimeout(() => this.connectToMainProcess(), 5000);
-        });
-        this.socketClient.on('close', (hadError) => {
-            this.logger.warn(`Socket connection closed. Had error: ${hadError}. Retrying in 5 seconds...`);
-            this.isConnectingOrConnected = false; // Reset flag on close
-            this.socketClient = undefined; // Ensure it's cleared
-            setTimeout(() => this.connectToMainProcess(), 5000);
-        });
-    }
-    sendToMainProcess(event, data) {
-        if (this.socketClient && this.socketClient.writable) {
-            const message = JSON.stringify({ event, data });
-            this.socketClient.write(message + '\n');
-            this.logger.debug(`Sent to main process: ${event}`);
-        }
-        else {
-            this.logger.warn('Socket not connected, attempting to reconnect...');
-            this.connectToMainProcess();
+    releaseLock() {
+        if (fs.existsSync(this.lockFilePath)) {
+            fs.unlinkSync(this.lockFilePath);
         }
     }
     async start() {
         if (this.isRunning) {
-            this.logger.warn('Daemon already running');
+            this.logger.warn('Daemon is already running.');
             return;
         }
-        // Check if another daemon instance is already running
-        const lockFile = '/tmp/linux-helper-daemon.lock';
-        if (fs.existsSync(lockFile)) {
-            try {
-                const pid = fs.readFileSync(lockFile, 'utf8').trim();
-                // Check if process is actually running
-                process.kill(parseInt(pid), 0);
-                this.logger.error('Another daemon instance is already running');
-                return;
-            }
-            catch (error) {
-                // Process not running, remove stale lock file
-                fs.unlinkSync(lockFile);
-            }
+        if (!this.acquireLock()) {
+            process.exit(1);
         }
-        try {
-            this.logger.info('Starting Linux Helper Daemon...');
-            // Create lock file
-            fs.writeFileSync(lockFile, process.pid.toString());
-            // Connect to main Electron process
-            this.connectToMainProcess();
-            this.isRunning = true;
-            this.logger.info(`Linux Helper Daemon started successfully`);
-            this.logger.info(`- Hotkey: ${this.config.hotkey}`);
-            this.logger.info(`- Socket: ${this.config.socketPath}`);
-            this.logger.info(`- PID: ${process.pid}`);
-        }
-        catch (error) {
-            this.logger.error('Failed to start daemon:', error);
-            throw error;
-        }
+        this.logger.info('Starting Linux Helper Daemon...');
+        this.isRunning = true;
+        await this.startSocketServer();
+        this.startHotkeyMonitoring();
     }
     async shutdown() {
-        if (!this.isRunning) {
+        if (!this.isRunning)
             return;
+        this.logger.info('Shutting down daemon...');
+        this.isRunning = false;
+        this.stopHotkeyMonitoring();
+        this.socketServer?.close();
+        if (this.clientSocket) {
+            this.clientSocket.destroy();
         }
-        this.logger.info('Shutting down Linux Helper Daemon...');
+        this.releaseLock();
+        this.logger.info('Daemon shutdown complete.');
+        process.exit(0);
+    }
+    setupProcessHandlers() {
+        process.on('SIGINT', () => this.shutdown());
+        process.on('SIGTERM', () => this.shutdown());
+        process.on('exit', () => this.releaseLock());
+    }
+    startHotkeyMonitoring() {
+        this.stopHotkeyMonitoring(); // Ensure no lingering process
+        const buttonMapping = {
+            'ForwardButton': 9,
+            'MiddleClick': 2,
+            'BackButton': 8
+        };
+        const button = buttonMapping[this.hotkey];
+        if (button) {
+            this.startMouseMonitoring(button);
+        }
+        else {
+            this.logger.warn(`Keyboard hotkey '${this.hotkey}' not yet implemented in daemon. Listening for mouse only.`);
+        }
+    }
+    stopHotkeyMonitoring() {
+        if (this.hotkeyProcess) {
+            this.hotkeyProcess.kill('SIGKILL'); // Use SIGKILL to ensure it dies
+            this.hotkeyProcess = null;
+            this.logger.info('Stopped previous hotkey monitoring process.');
+        }
+    }
+    startMouseMonitoring(button) {
+        this.logger.info(`Starting mouse button monitoring for button ${button}`);
         try {
-            // Stop hotkey monitoring
-            if (this.hotkeyProcess) {
-                this.hotkeyProcess.kill('SIGTERM');
-                this.hotkeyProcess = undefined;
-            }
-            // Close socket connection
-            if (this.socketClient) {
-                this.socketClient.end();
-                this.socketClient = undefined;
-            }
-            // Remove lock file
-            const lockFile = '/tmp/linux-helper-daemon.lock';
-            if (fs.existsSync(lockFile)) {
-                fs.unlinkSync(lockFile);
-            }
-            this.isRunning = false;
-            this.logger.info('Daemon shutdown complete');
-            process.exit(0);
+            this.hotkeyProcess = (0, child_process_1.spawn)('xinput', ['test-xi2', '--root'], {
+                detached: true, // Detach from parent
+                stdio: 'pipe'
+            });
+            this.hotkeyProcess.on('error', (err) => {
+                this.logger.error('Failed to spawn xinput process.', err.message);
+                this.hotkeyProcess = null;
+            });
+            this.hotkeyProcess.on('exit', (code, signal) => {
+                this.logger.warn(`xinput process exited with code ${code} and signal ${signal}`);
+                this.hotkeyProcess = null;
+                if (this.isRunning) {
+                    this.logger.info('Restarting mouse monitoring in 5 seconds...');
+                    setTimeout(() => this.startMouseMonitoring(button), 5000);
+                }
+            });
+            const debounceMs = 500;
+            let lastEventTime = 0;
+            this.hotkeyProcess.stdout?.on('data', (data) => {
+                const output = data.toString();
+                if (output.includes('ButtonPress') && output.includes(`detail: ${button}`)) {
+                    const now = Date.now();
+                    if (now - lastEventTime > debounceMs) {
+                        lastEventTime = now;
+                        this.logger.info(`Hotkey press detected (Button ${button})`);
+                        this.onHotkeyPress();
+                    }
+                }
+            });
+            this.hotkeyProcess.stderr?.on('data', (data) => {
+                this.logger.error(`xinput stderr: ${data.toString()}`);
+            });
         }
         catch (error) {
             if (error instanceof Error) {
-                this.logger.error('Error during shutdown:', error.message);
+                this.logger.error('Error spawning xinput.', error.message);
             }
-            else {
-                this.logger.error('Error during shutdown (unknown type):', error);
-            }
-            process.exit(1);
         }
     }
-    getStatus() {
-        return {
-            running: this.isRunning,
-            config: this.config,
-            hotkey: this.config.hotkey,
-            uptime: process.uptime()
-        };
-    }
-    updateHotkey(newHotkey) {
-        if (this.config.hotkey === newHotkey && this.hotkeyProcess) {
-            this.logger.info(`Received updateHotkey event for '${newHotkey}', but it's the same as the current hotkey and monitoring is active. No changes made.`);
-            return;
-        }
-        this.logger.info(`Updating hotkey from ${this.config.hotkey} to ${newHotkey}. Current monitoring process: ${this.hotkeyProcess ? 'active' : 'inactive'}`);
-        // Stop current monitoring
-        if (this.hotkeyProcess) {
-            this.hotkeyProcess.kill('SIGTERM');
-            this.hotkeyProcess = undefined;
-        }
-        // Update config
-        this.config.hotkey = newHotkey;
-        // Restart monitoring with new hotkey
-        this.setupMouseButtonMonitoring(async () => {
-            this.logger.info('Hotkey pressed, capturing screenshot and cursor position');
-            try {
-                const cursorPosition = await this.cursorTracker.getCurrentPosition();
-                const screenshot = await this.screenshotManager.captureActiveMonitor();
-                if (screenshot) {
-                    const payload = {
+    async onHotkeyPress() {
+        try {
+            const [screenshot, cursorPos] = await Promise.all([
+                this.screenshotManager.captureActiveMonitor(),
+                this.cursorTracker.getCurrentPosition()
+            ]);
+            if (screenshot && cursorPos) {
+                const payload = {
+                    type: 'hotkey-event',
+                    data: {
                         screenshotDataUrl: screenshot.dataUrl,
-                        cursorPosition
-                    };
-                    this.sendToMainProcess('hotkey-pressed', payload);
-                }
-            }
-            catch (error) {
-                if (error instanceof Error) {
-                    this.logger.error('Failed to handle hotkey press:', error.message);
+                        cursorPosition: cursorPos
+                    }
+                };
+                if (this.clientSocket) {
+                    this.clientSocket.write(JSON.stringify(payload));
+                    this.logger.info('Sent hotkey payload to main process.');
                 }
                 else {
-                    this.logger.error('Failed to handle hotkey press (unknown type):', error);
+                    this.logger.warn('No client connected to send payload.');
                 }
             }
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                this.logger.error('Error during hotkey press handler:', error.message);
+            }
+        }
+    }
+    async startSocketServer() {
+        if (fs.existsSync(this.socketPath)) {
+            fs.unlinkSync(this.socketPath);
+        }
+        this.socketServer = net.createServer((socket) => {
+            this.logger.info('Main process connected to daemon.');
+            this.clientSocket = socket;
+            socket.on('data', (data) => {
+                const message = JSON.parse(data.toString());
+                if (message.type === 'update-hotkey') {
+                    this.logger.info(`Received hotkey update: ${message.hotkey}`);
+                    this.hotkey = message.hotkey;
+                    this.startHotkeyMonitoring();
+                }
+            });
+            socket.on('close', () => {
+                this.logger.info('Main process disconnected.');
+                this.clientSocket = null;
+            });
+            socket.on('error', (err) => {
+                this.logger.error('Socket error with main process:', err.message);
+                this.clientSocket = null;
+            });
+        }).listen(this.socketPath, () => {
+            this.logger.info(`Daemon socket server listening at ${this.socketPath}`);
+        });
+        this.socketServer.on('error', (err) => {
+            this.logger.error('Socket server error:', err.message);
         });
     }
 }
-exports.LinuxHelperDaemon = LinuxHelperDaemon;
-// Main entry point
-if (require.main === module) {
-    const daemon = new LinuxHelperDaemon();
-    daemon.start().catch((error) => {
-        console.error('Failed to start daemon:', error);
-        process.exit(1);
-    });
-}
+// Ensure singleton instance is created and started
+LinuxHelperDaemon.getInstance().start();
 //# sourceMappingURL=main.js.map
